@@ -18,7 +18,7 @@ def analyze_loudness(file_path, stream_indices, progress_callback=None):
     
     if len(stream_indices) > 1:
         mix_inputs = "".join([f"[0:a:{i}]" for i in stream_indices])
-        filter_complex = f"{mix_inputs}amix=inputs={len(stream_indices)}[mixed];[mixed]ebur128=peak=true"
+        filter_complex = f"{mix_inputs}amerge=inputs={len(stream_indices)}[mixed];[mixed]ebur128=peak=true"
     else:
         filter_complex = f"[0:a:{stream_indices[0]}]ebur128=peak=true"
 

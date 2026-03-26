@@ -37,7 +37,7 @@ TRANSLATIONS = {
         "adv_up": "Erweitert ▲",
         "i_label": "Integrated (I): {} LUFS",
         "lra_label": "Loudness Range (LRA): {} LU",
-        "peak_label": "True Peak (Max): {} dBTP",
+        "peak_label": "Datei: {}",
         "error": "Fehler",
         "stream_sel_title": "Spurenauswahl",
         "stream_sel_info": "Audio-Layout weicht vom Standard ab.\nBitte wähle die zu messenden Spuren:",
@@ -45,6 +45,7 @@ TRANSLATIONS = {
         "channel_codec": "({} Kanal, {})",
         "analyze": "Analysieren",
         "select_at_least_one": "Bitte mindestens eine Spur auswählen!",
+        "select_exactly_two": "Bitte genau 2 Spuren auswählen!",
         "file_dialog": "Datei auswählen",
         "media_files": "Media Files (*.*)",
         "creator_info": "Ersteller: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Projekt</a><br>webseite@timbutenschoen.de",
@@ -73,7 +74,7 @@ TRANSLATIONS = {
         "adv_up": "Advanced ▲",
         "i_label": "Integrated (I): {} LUFS",
         "lra_label": "Loudness Range (LRA): {} LU",
-        "peak_label": "True Peak (Max): {} dBTP",
+        "peak_label": "File: {}",
         "error": "Error",
         "stream_sel_title": "Track Selection",
         "stream_sel_info": "Audio layout deviates from standard.\nPlease select the tracks to measure:",
@@ -81,6 +82,7 @@ TRANSLATIONS = {
         "channel_codec": "({} channel, {})",
         "analyze": "Analyze",
         "select_at_least_one": "Please select at least one track!",
+        "select_exactly_two": "Please select exactly 2 tracks!",
         "file_dialog": "Select File",
         "media_files": "Media Files (*.*)",
         "creator_info": "Creator: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Project</a><br>webseite@timbutenschoen.de",
@@ -126,7 +128,7 @@ class StreamSelectionDialog(QDialog):
         self.scroll_layout = QVBoxLayout(scroll_content)
         
         self.checkboxes = []
-        for s in streams:
+        for i, s in enumerate(streams):
             idx = s["audio_index"]
             ch = s.get("channels", "?")
             codec = s.get("codec_name", "")
@@ -134,6 +136,8 @@ class StreamSelectionDialog(QDialog):
             
             cb = QCheckBox(f"{title} {tr('channel_codec', ch, codec)}")
             cb.setProperty("stream_index", idx)
+            if i < 2:
+                cb.setChecked(True)
             self.checkboxes.append(cb)
             self.scroll_layout.addWidget(cb)
             
@@ -148,7 +152,10 @@ class StreamSelectionDialog(QDialog):
         
     def on_submit(self):
         self.selected_indices = [cb.property("stream_index") for cb in self.checkboxes if cb.isChecked()]
-        if not self.selected_indices:
+        if len(self.checkboxes) >= 2 and len(self.selected_indices) != 2:
+            QMessageBox.warning(self, tr("error"), tr("select_exactly_two"))
+            return
+        elif not self.selected_indices:
             QMessageBox.warning(self, tr("error"), tr("select_at_least_one"))
             return
         self.accept()
@@ -192,7 +199,7 @@ class SettingsDialog(QDialog):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.resize(600, 550)
+        self.resize(600, 650)
         
         # Signals for threads
         self.signals = WorkerSignals()
@@ -349,7 +356,7 @@ class MainWindow(QMainWindow):
         else:
             self.i_label.setText(tr("i_label", "-"))
             self.lra_label.setText(tr("lra_label", "-"))
-            self.peak_label.setText(tr("peak_label", "-"))
+            self.peak_label.setText(tr("peak_label", "..."))
 
     def show_info(self):
         msg = QMessageBox(self)
@@ -465,11 +472,10 @@ class MainWindow(QMainWindow):
             
         i_val = "N/A" if result["I"] is None else result["I"]
         lra_val = "N/A" if result["LRA"] is None else result["LRA"]
-        peak_val = "N/A" if result["Peak"] is None else result["Peak"]
-            
         self.i_label.setText(tr("i_label", i_val))
         self.lra_label.setText(tr("lra_label", lra_val))
-        self.peak_label.setText(tr("peak_label", peak_val))
+        filename = os.path.basename(self.current_file) if self.current_file else "N/A"
+        self.peak_label.setText(tr("peak_label", filename))
 
         # Update Plot
         if MATPLOTLIB_AVAILABLE:
