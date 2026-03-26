@@ -1,9 +1,0 @@
-build/
-dist/
-*.spec
-venv/
-__pycache__/
-*.pyc
-.DS_Store
-*.wav
-*.dmg
