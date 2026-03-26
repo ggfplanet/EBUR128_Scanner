@@ -10,10 +10,17 @@ import os
 from core.scanner import get_audio_streams, is_standard_layout
 from core.analyzer import analyze_loudness
 
+try:
+    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+
 
 TRANSLATIONS = {
     "de": {
-        "app_title": "EBU R 128 Lautheits-Messer",
+        "app_title": "EBU R 128 Scanner",
         "header": "Lautheitsanalyse (EBU R 128)",
         "info_text": "Wähle eine Audio- oder Videodatei aus, um die Lautheit zu messen.",
         "select_file": "Datei Auswählen",
@@ -40,13 +47,16 @@ TRANSLATIONS = {
         "select_at_least_one": "Bitte mindestens eine Spur auswählen!",
         "file_dialog": "Datei auswählen",
         "media_files": "Media Files (*.*)",
-        "creator_info": "Ersteller: Tim Butenschön<br><a href='https://www.ggfplanet.de/ebur128scanner' style='color: #2a82da;'>www.ggfplanet.de/ebur128scanner</a><br>webseite@timbutenschoen.de",
+        "creator_info": "Ersteller: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Projekt</a><br>webseite@timbutenschoen.de",
         "settings_title": "Einstellungen",
         "language": "Sprache:",
-        "close": "Schließen"
+        "close": "Schließen",
+        "legend_s": "Short-Term (S)",
+        "legend_target": "Ziel (-23 LUFS)",
+        "legend_peak": "Peak (> -1 dBTP)"
     },
     "en": {
-        "app_title": "EBU R 128 Loudness Scanner",
+        "app_title": "EBU R 128 Scanner",
         "header": "Loudness Analysis (EBU R 128)",
         "info_text": "Select an audio or video file to measure loudness.",
         "select_file": "Select File",
@@ -73,10 +83,13 @@ TRANSLATIONS = {
         "select_at_least_one": "Please select at least one track!",
         "file_dialog": "Select File",
         "media_files": "Media Files (*.*)",
-        "creator_info": "Creator: Tim Butenschön<br><a href='https://www.ggfplanet.de/ebur128scanner' style='color: #2a82da;'>www.ggfplanet.de/ebur128scanner</a><br>webseite@timbutenschoen.de",
+        "creator_info": "Creator: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Project</a><br>webseite@timbutenschoen.de",
         "settings_title": "Settings",
         "language": "Language:",
-        "close": "Close"
+        "close": "Close",
+        "legend_s": "Short-Term (S)",
+        "legend_target": "Target (-23 LUFS)",
+        "legend_peak": "Peak (> -1 dBTP)"
     }
 }
 
@@ -266,14 +279,23 @@ class MainWindow(QMainWindow):
             self.adv_layout.addWidget(lbl)
             
         self.adv_widget.hide()
+        
+        # Plot for loudness over time
+        if MATPLOTLIB_AVAILABLE:
+            self.figure = Figure(figsize=(5, 3), facecolor='#282828')
+            self.canvas = FigureCanvas(self.figure)
+            self.ax = self.figure.subplots()
+            self._setup_plot_style()
+            self.adv_layout.addWidget(self.canvas)
+        
         self.result_layout.addWidget(self.adv_widget)
         
         self.main_layout.addWidget(self.result_widget)
         self.main_layout.addStretch()
 
-        # Bottom Bar: V1.1, info, settings
+        # Bottom Bar: V1.2, info, settings
         bottom_layout = QHBoxLayout()
-        v_label = QLabel("V1.1")
+        v_label = QLabel("V1.2")
         v_label.setStyleSheet("color: #777777; font-size: 10px;")
         
         info_btn = QPushButton("i")
@@ -297,6 +319,19 @@ class MainWindow(QMainWindow):
         self.current_result = None
 
         self.update_texts()
+
+    def _setup_plot_style(self):
+        if not MATPLOTLIB_AVAILABLE: return
+        self.ax.set_facecolor('#282828')
+        self.ax.tick_params(colors='white', labelsize=8)
+        self.ax.spines['bottom'].set_color('white')
+        self.ax.spines['top'].set_color('white')
+        self.ax.spines['left'].set_color('white')
+        self.ax.spines['right'].set_color('white')
+        self.ax.set_xlabel("Time (s)", color='white', fontsize=9)
+        self.ax.set_ylabel("LUFS", color='white', fontsize=9)
+        self.ax.grid(True, alpha=0.2, color='white')
+        self.figure.tight_layout()
 
     def update_texts(self):
         self.setWindowTitle(tr("app_title"))
@@ -435,6 +470,31 @@ class MainWindow(QMainWindow):
         self.i_label.setText(tr("i_label", i_val))
         self.lra_label.setText(tr("lra_label", lra_val))
         self.peak_label.setText(tr("peak_label", peak_val))
+
+        # Update Plot
+        if MATPLOTLIB_AVAILABLE:
+            self.ax.clear()
+            self._setup_plot_style()
+            
+            times = result.get("Time_Points", [])
+            loudness = result.get("Loudness_Values", [])
+            peaks = result.get("Peak_Exceedances", [])
+            
+            if times and loudness:
+                self.ax.plot(times, loudness, color='#2a82da', linewidth=1.5, label=tr("legend_s"))
+                
+                if peaks:
+                    px = [p[0] for p in peaks]
+                    py = [p[1] for p in peaks]
+                    self.ax.scatter(px, py, color='#ff5555', s=20, zorder=5, label=tr("legend_peak"))
+                
+                # Target Line
+                self.ax.axhline(y=-23, color='#44aa44', linestyle='--', alpha=0.6, label=tr("legend_target"))
+                
+                self.ax.legend(loc="lower right", fontsize=8, facecolor="#282828", edgecolor="white", labelcolor="white")
+                
+                self.figure.tight_layout()
+                self.canvas.draw()
 
 def run_app():
     app = QApplication(sys.argv)

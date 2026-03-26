@@ -3,3 +3,4 @@ ffmpeg-python==0.2.0
 pyinstaller==6.4.0
 static-ffmpeg==2.7
 Pillow
+matplotlib

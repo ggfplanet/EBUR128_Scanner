@@ -269,17 +269,17 @@ M, S, I = −23.0 ±0.1 LUFS
 M, S, I = 0.0 ±0.1 LU 
 2 As #1 at −33.0 dBFS M, S, I = −33.0 ±0.1 LUFS 
 M, S, I = −10.0 ±0.1 LU 
-3 3 tones similar to #1 but with the following durations and levels:  
+3 3 tones similar to #1 but with the following durations and levels: 
 10 s at −36.0 dBFS; 60 s at −23.0 dBFS; 10 s at −36.0 dBFS 
 I = −23.0 ±0.1 LUFS 
 I = 0.0 ±0.1 LU 
 4 
-5 tones similar to #1 but with the following durations and levels:  
+5 tones similar to #1 but with the following durations and levels: 
 10 s at −72.0 dBFS; 10 s at −36.0 dBFS; 60 s at −23.0 dBFS; 10 s at 
 −36.0 dBFS; 10 s at −72.0 dBFS 
 I = −23.0 ±0.1 LUFS 
 I = 0.0 ±0.1 LU 
-5 3 tones similar to #1 but with the following durations and levels:  
+5 3 tones similar to #1 but with the following durations and levels: 
 20 s at −26.0 dBFS; 20.1 s at −20.0 dBFS; 20 s at −26.0 dBFS 
 I = −23.0 ±0.1 LUFS 
 I = 0.0 ±0.1 LU 
@@ -2453,7 +2453,7 @@ Tech 3343-2023 Guidelines for Production of Programmes in accordance with R 128
 41 
 11.2 Appendix 2: EBU R 128 
 EBU R 128 establishes a predictable and well -defined method to measure the loudness level for 
-news, sports, advertisements, drama, music, promotions, film etc. throughout the broadcast  chain 
+news, sports, advertisements, drama, music, promotions, film etc. throughout the broadcast chain 
 and thereby helps professionals to create robust specifications for ingest, production,  play-out and 
 distribution to a multitude of platforms. R  128 is based entirely on open standards and aims to 
 harmonise the way we produce and measure audio internationally. 

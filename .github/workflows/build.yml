@@ -20,9 +20,9 @@ jobs:
         pip install -r requirements.txt
     - name: Build EXE with PyInstaller
       run: |
-        pyinstaller --noconfirm --onefile --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --name "EBUR128_Scanner" main.py
+        pyinstaller --noconfirm --onefile --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --name "EBU R 128 Scanner" main.py
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: EBUR128_Scanner_Windows
-        path: dist/EBUR128_Scanner.exe
+        name: EBU_R_128_Scanner_Windows
+        path: "dist/EBU R 128 Scanner.exe"
