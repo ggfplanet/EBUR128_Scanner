@@ -2,7 +2,7 @@
 ; Dieses Skript erstellt einen Installer für die "onedir" Version von PyInstaller.
 
 [Setup]
-AppId={{EBUR128Scanner-Butenschoen-3341}}
+AppId=EBUR128Scanner-Butenschoen-3341
 AppName=EBU R 128 Scanner
 AppVersion=1.3
 AppPublisher=Tim Butenschön
@@ -17,7 +17,6 @@ OutputDir=dist/installer
 OutputBaseFilename=EBU_R_128_Scanner_Setup_V1.3
 Compression=lzma
 SolidCompression=yes
-SetupIconFile=logo_tim\EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png
 WizardStyle=modern
 
 [Languages]
