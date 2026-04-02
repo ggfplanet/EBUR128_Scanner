@@ -15,12 +15,10 @@ def main_with_crash_handler():
         if sys.stderr is None:
             sys.stderr = open(os.devnull, "w")
 
-        # Initialize static_ffmpeg early
-        try:
-            import static_ffmpeg
-            static_ffmpeg.add_paths()
-        except Exception as e:
-            os.environ["SCANNER_INIT_ERROR"] = str(e)
+        # Give our current executable directory priority in PATH so bundled ffmpeg is found implicitly
+        if getattr(sys, 'frozen', False):
+            base_dir = os.path.dirname(sys.executable)
+            os.environ["PATH"] = base_dir + os.pathsep + os.environ.get("PATH", "")
 
         from ui.app import run_app
         run_app()

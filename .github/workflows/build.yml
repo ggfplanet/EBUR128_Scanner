@@ -23,9 +23,12 @@ jobs:
     - name: Pre-download FFmpeg binaries
       run: |
         python -c "import static_ffmpeg; static_ffmpeg.add_paths()"
-    - name: Build with PyInstaller (onedir for fast startup)
+    - name: Copy FFmpeg binaries
       run: |
-        pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --collect-all static_ffmpeg --name "EBUR128Scanner" main.py
+        python -c "import os, shutil, static_ffmpeg; b = os.path.join(os.path.dirname(static_ffmpeg.__file__), 'bin', 'win32'); shutil.copy(os.path.join(b, 'ffmpeg.exe'), '.'); shutil.copy(os.path.join(b, 'ffprobe.exe'), '.')"
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --add-binary "ffmpeg.exe;." --add-binary "ffprobe.exe;." --name "EBUR128Scanner" main.py
     - name: Debug - List Dist Directory
       run: |
         ls -R dist/
