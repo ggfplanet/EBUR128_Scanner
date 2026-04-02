@@ -35,4 +35,4 @@ Name: "{group}\EBU R 128 Scanner"; Filename: "{app}\EBUR128Scanner.exe"
 Name: "{autodesktop}\EBU R 128 Scanner"; Filename: "{app}\EBUR128Scanner.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\EBUR128Scanner.exe"; Description: "{cm:LaunchProgram,EBU R 128 Scanner}"; Flags: nowait postinstall skipfsentry
+Filename: "{app}\EBUR128Scanner.exe"; Description: "{cm:LaunchProgram,EBU R 128 Scanner}"; Flags: nowait postinstall
