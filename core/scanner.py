@@ -11,24 +11,30 @@ def get_audio_streams(file_path):
         "-show_streams",
         file_path
     ]
-    try:
-        creation_flags = 0
-        if hasattr(subprocess, 'CREATE_NO_WINDOW'):
-            creation_flags = subprocess.CREATE_NO_WINDOW
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, creationflags=creation_flags)
-        data = json.loads(output)
-        audio_streams = []
-        # get audio streams and add explicit index
-        audio_idx = 0
-        for s in data.get("streams", []):
-            if s.get("codec_type") == "audio":
-                s["audio_index"] = audio_idx
-                audio_streams.append(s)
-                audio_idx += 1
-        return audio_streams
-    except Exception as e:
-        print(f"Error probing file: {e}")
-        return []
+    # Check if initial initialization failed
+    init_error = os.environ.get("SCANNER_INIT_ERROR")
+    if init_error:
+        raise Exception(f"Eingangskalibrierung fehlgeschlagen (static_ffmpeg): {init_error}")
+
+    creation_flags = 0
+    if hasattr(subprocess, 'CREATE_NO_WINDOW'):
+        creation_flags = subprocess.CREATE_NO_WINDOW
+    
+    # Try to execute ffprobe. If it's not found, this will raise FileNotFoundError
+    # pointing the user to the real issue (missing ffprobe)
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, creationflags=creation_flags)
+    data = json.loads(output)
+    
+    audio_streams = []
+    # get audio streams and add explicit index
+    audio_idx = 0
+    for s in data.get("streams", []):
+        if s.get("codec_type") == "audio":
+            s["audio_index"] = audio_idx
+            audio_streams.append(s)
+            audio_idx += 1
+    return audio_streams
+
 
 def is_standard_layout(audio_streams):
     """
