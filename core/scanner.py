@@ -11,10 +11,6 @@ def get_audio_streams(file_path):
         "-show_streams",
         file_path
     ]
-    # Check if initial initialization failed
-    init_error = os.environ.get("SCANNER_INIT_ERROR")
-    if init_error:
-        raise Exception(f"Eingangskalibrierung fehlgeschlagen (static_ffmpeg): {init_error}")
 
     creation_flags = 0
     if hasattr(subprocess, 'CREATE_NO_WINDOW'):
