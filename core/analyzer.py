@@ -61,7 +61,7 @@ def analyze_loudness(file_path, stream_indices, progress_callback=None):
     line_re = re.compile(r"t:\s*([\d\.]+).*?S:\s*([-+\d\.]+).*?(?:True peak|TPK):\s*([-+\d\.]+)")
     i_re = re.compile(r"I:\s*([-+\d\.]+)\s*LUFS")
     lra_re = re.compile(r"LRA:\s*([-+\d\.]+)\s*LU")
-    peak_re = re.compile(r"Peak:\s*([-+\d\.]+)\s*dBTP")
+    peak_re = re.compile(r"Peak:\s*([-+\d\.]+)\s*(?:dBTP|dBFS)")
     
     for line in process.stderr:
         m_prog = line_re.search(line)
