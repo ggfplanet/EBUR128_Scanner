@@ -20,9 +20,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+    - name: Pre-download FFmpeg binaries
+      run: |
+        python -c "import static_ffmpeg; static_ffmpeg.add_paths()"
     - name: Build with PyInstaller (onedir for fast startup)
       run: |
-        pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --name "EBUR128Scanner" main.py
+        pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --collect-all static_ffmpeg --name "EBUR128Scanner" main.py
     - name: Debug - List Dist Directory
       run: |
         ls -R dist/
