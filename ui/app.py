@@ -10,17 +10,14 @@ import os
 from core.scanner import get_audio_streams, is_standard_layout
 from core.analyzer import analyze_loudness
 
-try:
-    from matplotlib.figure import Figure
-    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
+import importlib.util
+MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
 
+VERSION = "1.3"
 
 TRANSLATIONS = {
     "de": {
-        "app_title": "EBU R 128 Scanner",
+        "app_title": f"EBU R 128 Scanner V{VERSION}",
         "header": "Lautheitsanalyse (EBU R 128)",
         "info_text": "Wähle eine Audio- oder Videodatei aus, um die Lautheit zu messen.",
         "select_file": "Datei Auswählen",
@@ -37,7 +34,8 @@ TRANSLATIONS = {
         "adv_up": "Erweitert ▲",
         "i_label": "Integrated (I): {} LUFS",
         "lra_label": "Loudness Range (LRA): {} LU",
-        "peak_label": "Datei: {}",
+        "tp_label": "True Peak (Max): {} dBTP",
+        "file_label": "Datei: {}",
         "error": "Fehler",
         "stream_sel_title": "Spurenauswahl",
         "stream_sel_info": "Audio-Layout weicht vom Standard ab.\nBitte wähle die zu messenden Spuren:",
@@ -57,7 +55,7 @@ TRANSLATIONS = {
         "legend_peak": "Peak (> -1 dBTP)"
     },
     "en": {
-        "app_title": "EBU R 128 Scanner",
+        "app_title": f"EBU R 128 Scanner V{VERSION}",
         "header": "Loudness Analysis (EBU R 128)",
         "info_text": "Select an audio or video file to measure loudness.",
         "select_file": "Select File",
@@ -74,7 +72,8 @@ TRANSLATIONS = {
         "adv_up": "Advanced ▲",
         "i_label": "Integrated (I): {} LUFS",
         "lra_label": "Loudness Range (LRA): {} LU",
-        "peak_label": "File: {}",
+        "tp_label": "True Peak (Max): {} dBTP",
+        "file_label": "File: {}",
         "error": "Error",
         "stream_sel_title": "Track Selection",
         "stream_sel_info": "Audio layout deviates from standard.\nPlease select the tracks to measure:",
@@ -279,9 +278,10 @@ class MainWindow(QMainWindow):
         
         self.i_label = QLabel()
         self.lra_label = QLabel()
-        self.peak_label = QLabel()
+        self.tp_label = QLabel()
+        self.file_label = QLabel()
         
-        for lbl in (self.i_label, self.lra_label, self.peak_label):
+        for lbl in (self.i_label, self.lra_label, self.tp_label, self.file_label):
             lbl.setStyleSheet("font-size: 14px;")
             self.adv_layout.addWidget(lbl)
             
@@ -289,6 +289,8 @@ class MainWindow(QMainWindow):
         
         # Plot for loudness over time
         if MATPLOTLIB_AVAILABLE:
+            from matplotlib.figure import Figure
+            from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
             self.figure = Figure(figsize=(5, 3), facecolor='#282828')
             self.canvas = FigureCanvas(self.figure)
             self.ax = self.figure.subplots()
@@ -300,9 +302,9 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(self.result_widget)
         self.main_layout.addStretch()
 
-        # Bottom Bar: V1.2, info, settings
+        # Bottom Bar: VERSION, info, settings
         bottom_layout = QHBoxLayout()
-        v_label = QLabel("V1.2")
+        v_label = QLabel(f"V{VERSION}")
         v_label.setStyleSheet("color: #777777; font-size: 10px;")
         
         info_btn = QPushButton("i")
@@ -356,11 +358,12 @@ class MainWindow(QMainWindow):
         else:
             self.i_label.setText(tr("i_label", "-"))
             self.lra_label.setText(tr("lra_label", "-"))
-            self.peak_label.setText(tr("peak_label", "..."))
+            self.tp_label.setText(tr("tp_label", "-"))
+            self.file_label.setText(tr("file_label", "..."))
 
     def show_info(self):
         msg = QMessageBox(self)
-        msg.setWindowTitle("Info")
+        msg.setWindowTitle(f"Info (V{VERSION})")
         msg.setTextFormat(Qt.RichText)
         msg.setText(tr("creator_info"))
         msg.setStandardButtons(QMessageBox.Ok)
@@ -472,10 +475,12 @@ class MainWindow(QMainWindow):
             
         i_val = "N/A" if result["I"] is None else result["I"]
         lra_val = "N/A" if result["LRA"] is None else result["LRA"]
+        tp_val = "N/A" if result["Peak"] is None else result["Peak"]
         self.i_label.setText(tr("i_label", i_val))
         self.lra_label.setText(tr("lra_label", lra_val))
+        self.tp_label.setText(tr("tp_label", tp_val))
         filename = os.path.basename(self.current_file) if self.current_file else "N/A"
-        self.peak_label.setText(tr("peak_label", filename))
+        self.file_label.setText(tr("file_label", filename))
 
         # Update Plot
         if MATPLOTLIB_AVAILABLE:

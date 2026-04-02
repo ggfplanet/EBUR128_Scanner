@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Build and Distribution
+build/
+dist/
+*.spec
+*.dmg
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Test files
+test.wav
+testfiles/

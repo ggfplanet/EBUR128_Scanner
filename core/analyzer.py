@@ -1,8 +1,5 @@
 import subprocess
 import re
-import static_ffmpeg
-
-static_ffmpeg.add_paths()
 
 def format_timecode(seconds):
     h = int(seconds // 3600)
@@ -11,6 +8,9 @@ def format_timecode(seconds):
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 def analyze_loudness(file_path, stream_indices, progress_callback=None):
+    import static_ffmpeg
+    static_ffmpeg.add_paths()
+    
     if not stream_indices:
         stream_indices = [0]
         
@@ -31,11 +31,16 @@ def analyze_loudness(file_path, stream_indices, progress_callback=None):
         "-"
     ]
 
+    creation_flags = 0
+    if hasattr(subprocess, 'CREATE_NO_WINDOW'):
+        creation_flags = subprocess.CREATE_NO_WINDOW
+
     process = subprocess.Popen(
         cmd,
         stderr=subprocess.PIPE,
         universal_newlines=True,
-        bufsize=1
+        bufsize=1,
+        creationflags=creation_flags
     )
 
     t_exceeded_times = []

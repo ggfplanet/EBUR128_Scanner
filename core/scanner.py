@@ -1,10 +1,9 @@
 import subprocess
 import json
-import static_ffmpeg
-
-static_ffmpeg.add_paths()
 
 def get_audio_streams(file_path):
+    import static_ffmpeg
+    static_ffmpeg.add_paths()
     cmd = [
         "ffprobe",
         "-v", "quiet",
@@ -13,7 +12,10 @@ def get_audio_streams(file_path):
         file_path
     ]
     try:
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        creation_flags = 0
+        if hasattr(subprocess, 'CREATE_NO_WINDOW'):
+            creation_flags = subprocess.CREATE_NO_WINDOW
+        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, creationflags=creation_flags)
         data = json.loads(output)
         audio_streams = []
         # get audio streams and add explicit index

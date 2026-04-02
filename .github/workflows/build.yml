@@ -18,11 +18,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Build EXE with PyInstaller
+    - name: Build with PyInstaller (onedir for fast startup)
       run: |
-        pyinstaller --noconfirm --onefile --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --name "EBU R 128 Scanner" main.py
-    - name: Upload Artifact
+        pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --name "EBU R 128 Scanner" main.py
+    - name: Compile Inno Setup Installer
+      run: |
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" installer_windows.iss
+    - name: Upload Installer Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: EBU_R_128_Scanner_Windows
-        path: "dist/EBU R 128 Scanner.exe"
+        name: EBU_R_128_Scanner_Windows_Setup
+        path: "dist/installer/*.exe"

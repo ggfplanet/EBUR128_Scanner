@@ -51,7 +51,8 @@ Ein DMG-Installer kann mit dem bereitgestellten Skript erstellt werden:
 ```bash
 ./build_dmg.sh
 ```
-Dies nutzt `PyInstaller` und `hdiutil`, um ein fertiges Installationsimage zu erzeugen.
+Dies nutzt `PyInstaller` und `hdiutil`, um ein fertiges Installationsimage zu erzeugen. 
+*Hinweis: Das Skript ist ab V1.3 für Apple Silicon (arm64) optimiert, um die Dateigröße gering zu halten. Unterstützung für Intel Macs ist nicht mehr enthalten.*
 
 ### Windows
 Die Erstellung der Windows-Executable (`.exe`) erfolgt automatisiert über GitHub Actions (siehe `.github/workflows/build.yml`) bei jedem Push auf den `main`-Branch.
