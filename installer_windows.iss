@@ -27,12 +27,12 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; Kopiert alle Dateien aus dem PyInstaller "dist/EBU R 128 Scanner" Verzeichnis
-Source: "dist\EBU R 128 Scanner\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Kopiert alle Dateien aus dem PyInstaller "dist/EBUR128Scanner" Verzeichnis
+Source: "dist\EBUR128Scanner\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\EBU R 128 Scanner"; Filename: "{app}\EBU R 128 Scanner.exe"
-Name: "{autodesktop}\EBU R 128 Scanner"; Filename: "{app}\EBU R 128 Scanner.exe"; Tasks: desktopicon
+Name: "{group}\EBU R 128 Scanner"; Filename: "{app}\EBUR128Scanner.exe"
+Name: "{autodesktop}\EBU R 128 Scanner"; Filename: "{app}\EBUR128Scanner.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\EBU R 128 Scanner.exe"; Description: "{cm:LaunchProgram,EBU R 128 Scanner}"; Flags: nowait postinstall skipfsentry
+Filename: "{app}\EBUR128Scanner.exe"; Description: "{cm:LaunchProgram,EBU R 128 Scanner}"; Flags: nowait postinstall skipfsentry
