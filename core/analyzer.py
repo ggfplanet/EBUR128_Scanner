@@ -8,10 +8,10 @@ def format_timecode(seconds):
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 def analyze_loudness(file_path, stream_indices, progress_callback=None):
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
+    # static_ffmpeg is already initialized in main.py
     
     if not stream_indices:
+
         stream_indices = [0]
         
     inputs = ["-i", file_path]

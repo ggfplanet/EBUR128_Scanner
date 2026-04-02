@@ -2,9 +2,9 @@ import subprocess
 import json
 
 def get_audio_streams(file_path):
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
+    # static_ffmpeg is already initialized in main.py
     cmd = [
+
         "ffprobe",
         "-v", "quiet",
         "-print_format", "json",

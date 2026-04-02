@@ -37,6 +37,37 @@ echo "Preparing DMG folder..."
 mkdir -p dist/dmg
 cp -r "dist/EBU R 128 Scanner.app" dist/dmg/
 cp README_macOS.txt dist/dmg/
+
+echo "Cleaning up unneeded frameworks to reduce size..."
+# Wir entfernen manuell schwere, nicht genutzte Qt-Frameworks aus dem Bundle
+FRAMEWORKS_DIR="dist/dmg/EBU R 128 Scanner.app/Contents/Frameworks"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtWebEngineCore.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtWebEngineWidgets.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtQuick.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtQml.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtVirtualKeyboard.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtSql.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtTest.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtMultimedia.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtLocation.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtPositioning.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtSensors.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtBluetooth.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtNfc.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtCharts.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/Qt3DCore.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/Qt3DRender.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtGamepad.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtPdf.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtDataVisualization.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtRemoteObjects.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtScxml.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtWebChannel.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtWebSockets.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtWebView.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtQuickControls2.framework"
+rm -rf "$FRAMEWORKS_DIR/PySide6/Qt/lib/QtQuickWidgets.framework"
+
 ln -s /Applications dist/dmg/Applications
 
 echo "Creating DMG..."
