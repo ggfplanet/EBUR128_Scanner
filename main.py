@@ -6,18 +6,21 @@ import traceback
 
 def main_with_crash_handler():
     try:
+        # Create dummy streams FIRST because --windowed mode on Windows has no console handles.
+        # This prevents any subprocesses or print statements in external libraries from hanging the app.
+        if sys.stdin is None:
+            sys.stdin = open(os.devnull, "r")
+        if sys.stdout is None:
+            sys.stdout = open(os.devnull, "w")
+        if sys.stderr is None:
+            sys.stderr = open(os.devnull, "w")
+
         # Initialize static_ffmpeg early
         try:
             import static_ffmpeg
             static_ffmpeg.add_paths()
         except Exception as e:
             os.environ["SCANNER_INIT_ERROR"] = str(e)
-
-        # Create dummy streams ONLY if we are in windowed mode and they are None
-        if sys.stdout is None:
-            sys.stdout = open(os.devnull, "w")
-        if sys.stderr is None:
-            sys.stderr = open(os.devnull, "w")
 
         from ui.app import run_app
         run_app()
