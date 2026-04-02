@@ -20,12 +20,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Pre-download FFmpeg binaries
+    - name: Download fully static FFmpeg binaries
       run: |
-        python -c "import static_ffmpeg; static_ffmpeg.add_paths()"
-    - name: Copy FFmpeg binaries
-      run: |
-        python -c "import os, shutil, static_ffmpeg; b = os.path.join(os.path.dirname(static_ffmpeg.__file__), 'bin', 'win32'); shutil.copy(os.path.join(b, 'ffmpeg.exe'), '.'); shutil.copy(os.path.join(b, 'ffprobe.exe'), '.')"
+        python download_ffmpeg_win.py
     - name: Build with PyInstaller
       run: |
         pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --add-binary "ffmpeg.exe;." --add-binary "ffprobe.exe;." --name "EBUR128Scanner" main.py
