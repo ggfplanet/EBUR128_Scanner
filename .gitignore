@@ -8,7 +8,6 @@ venv/
 # Build and Distribution
 build/
 dist/
-*.spec
 *.dmg
 
 # OS-specific
@@ -18,3 +17,14 @@ Thumbs.db
 # Test files
 test.wav
 testfiles/
+
+# Downloaded binaries
+ffmpeg
+ffprobe
+*.exe
+
+# Affinity Designer source files
+logo_tim/*.icon/
+
+# Empty placeholder directories
+assets/

@@ -10,7 +10,7 @@ python -m pip install -r requirements.txt
 echo Downloading fully static FFmpeg binaries for Windows...
 python download_ffmpeg_win.py
 
-pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png" --add-binary "ffmpeg.exe;." --add-binary "ffprobe.exe;." --name "EBUR128Scanner" main.py
+pyinstaller --noconfirm --onedir --windowed --icon="logo_tim/icon.ico" --add-data "logo_tim;logo_tim" --add-binary "ffmpeg.exe;." --add-binary "ffprobe.exe;." --name "EBUR128Scanner" main.py
 echo.
 echo If you have Inno Setup installed, you can now compile the installer:
 echo Running ISCC...

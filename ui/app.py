@@ -6,199 +6,64 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from PySide6.QtCore import Qt, Signal, QObject
 from PySide6.QtGui import QPalette, QColor, QFont, QIcon
 import os
+import subprocess
 
-from core.scanner import get_audio_streams, is_standard_layout
-from core.analyzer import analyze_loudness
+from core.scanner import get_audio_streams, get_standard_selection
+from core.analyzer import analyze_loudness, format_timecode
 
 import importlib.util
 MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
 
-VERSION = "1.3"
+from ui.i18n import tr, VERSION
+from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
+from ui.update_banner import UpdateBanner
+from core.update_service import check_for_updates
 
-TRANSLATIONS = {
-    "de": {
-        "app_title": f"EBU R 128 Scanner V{VERSION}",
-        "header": "Lautheitsanalyse (EBU R 128)",
-        "info_text": "Wähle eine Audio- oder Videodatei aus, um die Lautheit zu messen.",
-        "select_file": "Datei Auswählen",
-        "reading_structure": "Dateistruktur wird gelesen...",
-        "no_audio": "Keine Audiospuren gefunden oder Datei konnte nicht gelesen werden.",
-        "standard_layout": "Standard-Layout erkannt. Analysiere...",
-        "analyzing_tracks": "Analysiere {} Spur(en)...",
-        "analyzing_time": "Analysiere Film-Zeit: {:.1f}s",
-        "analysis_done": "Analyse abgeschlossen.",
-        "analysis_failed": "Analyse fehlgeschlagen (FFmpeg gab keine Lautheits-Daten aus).",
-        "gain_adjustment": "Anpassung: {}{} dB",
-        "warning_peak": "Warnung: True-Peak (> -1 dBTP) überschritten ({}x)!",
-        "adv_down": "Erweitert ▼",
-        "adv_up": "Erweitert ▲",
-        "i_label": "Integrated (I): {} LUFS",
-        "lra_label": "Loudness Range (LRA): {} LU",
-        "tp_label": "True Peak (Max): {} dBTP",
-        "file_label": "Datei: {}",
-        "error": "Fehler",
-        "stream_sel_title": "Spurenauswahl",
-        "stream_sel_info": "Audio-Layout weicht vom Standard ab.\nBitte wähle die zu messenden Spuren:",
-        "track": "Spur {}",
-        "channel_codec": "({} Kanal, {})",
-        "analyze": "Analysieren",
-        "select_at_least_one": "Bitte mindestens eine Spur auswählen!",
-        "select_exactly_two": "Bitte genau 2 Spuren auswählen!",
-        "file_dialog": "Datei auswählen",
-        "media_files": "Media Files (*.*)",
-        "creator_info": "Ersteller: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Projekt</a><br>webseite@timbutenschoen.de",
-        "settings_title": "Einstellungen",
-        "language": "Sprache:",
-        "close": "Schließen",
-        "legend_s": "Short-Term (S)",
-        "legend_target": "Ziel (-23 LUFS)",
-        "legend_peak": "Peak (> -1 dBTP)"
-    },
-    "en": {
-        "app_title": f"EBU R 128 Scanner V{VERSION}",
-        "header": "Loudness Analysis (EBU R 128)",
-        "info_text": "Select an audio or video file to measure loudness.",
-        "select_file": "Select File",
-        "reading_structure": "Reading file structure...",
-        "no_audio": "No audio tracks found or file could not be read.",
-        "standard_layout": "Standard layout detected. Analyzing...",
-        "analyzing_tracks": "Analyzing {} track(s)...",
-        "analyzing_time": "Analyzing movie time: {:.1f}s",
-        "analysis_done": "Analysis complete.",
-        "analysis_failed": "Analysis failed (FFmpeg returned no loudness data).",
-        "gain_adjustment": "Adjustment: {}{} dB",
-        "warning_peak": "Warning: True-Peak (> -1 dBTP) exceeded ({}t)!",
-        "adv_down": "Advanced ▼",
-        "adv_up": "Advanced ▲",
-        "i_label": "Integrated (I): {} LUFS",
-        "lra_label": "Loudness Range (LRA): {} LU",
-        "tp_label": "True Peak (Max): {} dBTP",
-        "file_label": "File: {}",
-        "error": "Error",
-        "stream_sel_title": "Track Selection",
-        "stream_sel_info": "Audio layout deviates from standard.\nPlease select the tracks to measure:",
-        "track": "Track {}",
-        "channel_codec": "({} channel, {})",
-        "analyze": "Analyze",
-        "select_at_least_one": "Please select at least one track!",
-        "select_exactly_two": "Please select exactly 2 tracks!",
-        "file_dialog": "Select File",
-        "media_files": "Media Files (*.*)",
-        "creator_info": "Creator: Tim Butenschön<br><a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da;'>ggfplanet.de/ebur128scanner</a><br><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da;'>GitHub Project</a><br>webseite@timbutenschoen.de",
-        "settings_title": "Settings",
-        "language": "Language:",
-        "close": "Close",
-        "legend_s": "Short-Term (S)",
-        "legend_target": "Target (-23 LUFS)",
-        "legend_peak": "Peak (> -1 dBTP)"
-    }
-}
 
-CURRENT_LANG = "de"
+def format_user_error(e: Exception) -> str:
+    """Übersetzt technische Exceptions in nutzerfreundliche Fehlermeldungen."""
+    msg_str = str(e).lower()
+    if isinstance(e, FileNotFoundError):
+        if "ffmpeg" in msg_str or "ffprobe" in msg_str:
+            return tr("error_ffmpeg_not_found")
+        return tr("error_file_read")
+    if isinstance(e, (subprocess.CalledProcessError, subprocess.SubprocessError, RuntimeError)):
+        return tr("error_file_read")
+    return tr("error_general", str(e))
 
-def tr(key, *args):
-    text = TRANSLATIONS.get(CURRENT_LANG, TRANSLATIONS["de"]).get(key, key)
-    if args:
-        return text.format(*args)
-    return text
+
+def get_resource_path(relative_path: str) -> str:
+    """Ermittelt den Pfad zu einer Ressource (funktioniert in Dev & gepacktem PyInstaller-Build)."""
+    candidates = []
+    if getattr(sys, "frozen", False):
+        if hasattr(sys, "_MEIPASS"):
+            candidates.append(os.path.join(sys._MEIPASS, relative_path))
+        exe_dir = os.path.dirname(sys.executable)
+        candidates.append(os.path.join(exe_dir, relative_path))
+        candidates.append(os.path.join(exe_dir, "_internal", relative_path))
+        candidates.append(os.path.normpath(os.path.join(exe_dir, "..", "Resources", relative_path)))
+    else:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        candidates.append(os.path.join(project_root, relative_path))
+
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return candidates[0] if candidates else relative_path
 
 class WorkerSignals(QObject):
     progress = Signal(float)
     finished_probe = Signal(list)
     finished_analyze = Signal(dict)
     error = Signal(str)
-
-class StreamSelectionDialog(QDialog):
-    def __init__(self, streams, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(tr("stream_sel_title"))
-        self.setFixedSize(450, 350)
-        self.selected_indices = []
-        
-        layout = QVBoxLayout(self)
-        
-        self.info_label = QLabel(tr("stream_sel_info"))
-        self.info_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        layout.addWidget(self.info_label)
-        
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll_content = QWidget()
-        self.scroll_layout = QVBoxLayout(scroll_content)
-        
-        self.checkboxes = []
-        for i, s in enumerate(streams):
-            idx = s["audio_index"]
-            ch = s.get("channels", "?")
-            codec = s.get("codec_name", "")
-            title = s.get("tags", {}).get("title", f"{tr('track', idx+1)}")
-            
-            cb = QCheckBox(f"{title} {tr('channel_codec', ch, codec)}")
-            cb.setProperty("stream_index", idx)
-            if i < 2:
-                cb.setChecked(True)
-            self.checkboxes.append(cb)
-            self.scroll_layout.addWidget(cb)
-            
-        self.scroll_layout.addStretch()
-        scroll.setWidget(scroll_content)
-        layout.addWidget(scroll)
-        
-        self.btn = QPushButton(tr("analyze"))
-        self.btn.clicked.connect(self.on_submit)
-        self.btn.setMinimumHeight(40)
-        layout.addWidget(self.btn)
-        
-    def on_submit(self):
-        self.selected_indices = [cb.property("stream_index") for cb in self.checkboxes if cb.isChecked()]
-        if len(self.checkboxes) >= 2 and len(self.selected_indices) != 2:
-            QMessageBox.warning(self, tr("error"), tr("select_exactly_two"))
-            return
-        elif not self.selected_indices:
-            QMessageBox.warning(self, tr("error"), tr("select_at_least_one"))
-            return
-        self.accept()
-
-class SettingsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.parent_window = parent
-        self.setWindowTitle(tr("settings_title"))
-        self.setFixedSize(300, 150)
-        
-        layout = QVBoxLayout(self)
-        
-        lang_layout = QHBoxLayout()
-        lang_label = QLabel(tr("language"))
-        self.lang_combo = QComboBox()
-        self.lang_combo.addItem("Deutsch", "de")
-        self.lang_combo.addItem("English", "en")
-        
-        idx = 0 if CURRENT_LANG == "de" else 1
-        self.lang_combo.setCurrentIndex(idx)
-        self.lang_combo.currentIndexChanged.connect(self.change_language)
-        
-        lang_layout.addWidget(lang_label)
-        lang_layout.addWidget(self.lang_combo)
-        layout.addLayout(lang_layout)
-        
-        layout.addStretch()
-        
-        close_btn = QPushButton(tr("close"))
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
-
-    def change_language(self):
-        global CURRENT_LANG
-        CURRENT_LANG = self.lang_combo.currentData()
-        self.setWindowTitle(tr("settings_title"))
-        if self.parent_window:
-            self.parent_window.update_texts()
+    update_checked = Signal(dict)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.resize(600, 650)
+        if not QApplication.windowIcon().isNull():
+            self.setWindowIcon(QApplication.windowIcon())
         
         # Signals for threads
         self.signals = WorkerSignals()
@@ -206,11 +71,19 @@ class MainWindow(QMainWindow):
         self.signals.finished_probe.connect(self.on_probe_done)
         self.signals.finished_analyze.connect(self.on_analyze_done)
         self.signals.error.connect(self.on_error)
+        self.signals.update_checked.connect(self.on_update_checked)
+
+        self.cancel_event = threading.Event()
+        self.active_process = None
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout(central_widget)
         self.main_layout.setContentsMargins(20, 20, 20, 10)
+
+        # Update Banner (tim-update)
+        self.update_banner = UpdateBanner()
+        self.main_layout.addWidget(self.update_banner)
         
         # Header
         self.header_label = QLabel()
@@ -244,6 +117,28 @@ class MainWindow(QMainWindow):
         self.status_label.setStyleSheet("color: gray;")
         self.status_label.setAlignment(Qt.AlignCenter)
         self.action_layout.addWidget(self.status_label)
+
+        self.cancel_btn = QPushButton(tr("cancel"))
+        self.cancel_btn.setMinimumHeight(32)
+        self.cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #383838;
+                color: #e0e0e0;
+                font-size: 13px;
+                font-weight: bold;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 4px 14px;
+            }
+            QPushButton:hover {
+                background-color: #4a4a4a;
+                border-color: #ff5555;
+                color: #ffffff;
+            }
+        """)
+        self.cancel_btn.clicked.connect(self.cancel_analysis)
+        self.cancel_btn.hide()
+        self.action_layout.addWidget(self.cancel_btn, alignment=Qt.AlignCenter)
         
         self.main_layout.addWidget(self.action_widget)
         
@@ -328,6 +223,17 @@ class MainWindow(QMainWindow):
         self.current_result = None
 
         self.update_texts()
+        self._start_update_check()
+
+    def _start_update_check(self):
+        def _check():
+            res = check_for_updates(VERSION)
+            self.signals.update_checked.emit(res)
+        threading.Thread(target=_check, daemon=True).start()
+
+    def on_update_checked(self, result):
+        if result and result.get("has_update"):
+            self.update_banner.set_update_info(result)
 
     def _setup_plot_style(self):
         if not MATPLOTLIB_AVAILABLE: return
@@ -337,8 +243,9 @@ class MainWindow(QMainWindow):
         self.ax.spines['top'].set_color('white')
         self.ax.spines['left'].set_color('white')
         self.ax.spines['right'].set_color('white')
-        self.ax.set_xlabel("Time (s)", color='white', fontsize=9)
-        self.ax.set_ylabel("LUFS", color='white', fontsize=9)
+        self.ax.set_xlabel(tr("plot_time"), color='white', fontsize=9)
+        self.ax.set_ylabel(tr("plot_lufs"), color='white', fontsize=9)
+        self.ax.set_ylim(-60, 3)
         self.ax.grid(True, alpha=0.2, color='white')
         self.figure.tight_layout()
 
@@ -347,10 +254,14 @@ class MainWindow(QMainWindow):
         self.header_label.setText(tr("header"))
         self.info_label.setText(tr("info_text"))
         self.select_btn.setText(tr("select_file"))
+        self.cancel_btn.setText(tr("cancel"))
         if self.adv_widget.isHidden():
             self.adv_btn.setText(tr("adv_down"))
         else:
             self.adv_btn.setText(tr("adv_up"))
+
+        if hasattr(self, 'update_banner'):
+            self.update_banner.update_texts()
 
         # Redraw result if present
         if self.current_result:
@@ -362,12 +273,8 @@ class MainWindow(QMainWindow):
             self.file_label.setText(tr("file_label", "..."))
 
     def show_info(self):
-        msg = QMessageBox(self)
-        msg.setWindowTitle(f"Info (V{VERSION})")
-        msg.setTextFormat(Qt.RichText)
-        msg.setText(tr("creator_info"))
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec()
+        dlg = InfoDialog(self)
+        dlg.exec()
 
     def show_settings(self):
         dlg = SettingsDialog(self)
@@ -391,6 +298,7 @@ class MainWindow(QMainWindow):
         if loading:
             self.select_btn.setEnabled(False)
             self.progress_bar.show()
+            self.cancel_btn.show()
             self.status_label.setText(text)
             self.result_widget.hide()
             self.alert_label.hide()
@@ -398,6 +306,7 @@ class MainWindow(QMainWindow):
         else:
             self.select_btn.setEnabled(True)
             self.progress_bar.hide()
+            self.cancel_btn.hide()
             self.status_label.setText(text)
 
     def start_analysis_flow(self):
@@ -409,7 +318,7 @@ class MainWindow(QMainWindow):
             streams = get_audio_streams(self.current_file)
             self.signals.finished_probe.emit(streams)
         except Exception as e:
-            self.signals.error.emit(str(e))
+            self.signals.error.emit(format_user_error(e))
 
     def on_error(self, message):
         self.set_loading(False, "")
@@ -420,10 +329,10 @@ class MainWindow(QMainWindow):
             self.on_error(tr("no_audio"))
             return
 
-        if is_standard_layout(streams):
+        standard_sel = get_standard_selection(streams)
+        if standard_sel is not None:
             self.status_label.setText(tr("standard_layout"))
-            selected = [s["audio_index"] for s in streams[:3]]
-            self._start_ffmpeg_analysis(selected)
+            self._start_ffmpeg_analysis(standard_sel)
         else:
             self.set_loading(False, "")
             dlg = StreamSelectionDialog(streams, self)
@@ -432,22 +341,47 @@ class MainWindow(QMainWindow):
                 self._start_ffmpeg_analysis(dlg.selected_indices)
 
     def _start_ffmpeg_analysis(self, stream_indices):
+        self.cancel_event.clear()
+        self.active_process = None
         threading.Thread(target=self._analyze_thread, args=(stream_indices,), daemon=True).start()
 
     def _analyze_thread(self, stream_indices):
         def progress_cb(t):
             self.signals.progress.emit(t)
+
+        def on_started(proc):
+            self.active_process = proc
             
         try:
-            result = analyze_loudness(self.current_file, stream_indices, progress_callback=progress_cb)
+            result = analyze_loudness(
+                self.current_file, 
+                stream_indices, 
+                progress_callback=progress_cb,
+                cancel_event=self.cancel_event,
+                on_process_started=on_started
+            )
             self.signals.finished_analyze.emit(result)
         except Exception as e:
-            self.signals.error.emit(str(e))
+            if not self.cancel_event.is_set():
+                self.signals.error.emit(format_user_error(e))
+
+    def cancel_analysis(self):
+        self.cancel_event.set()
+        if self.active_process:
+            try:
+                self.active_process.terminate()
+            except Exception:
+                pass
+        self.set_loading(False, tr("analysis_cancelled"))
 
     def update_progress(self, t):
         self.status_label.setText(tr("analyzing_time", t))
 
     def on_analyze_done(self, result):
+        if self.cancel_event.is_set() or result.get("Cancelled"):
+            self.set_loading(False, tr("analysis_cancelled"))
+            return
+
         self.set_loading(False, tr("analysis_done"))
         
         if result.get("I") is None:
@@ -458,17 +392,37 @@ class MainWindow(QMainWindow):
         self.result_widget.show()
         self._display_result(result)
 
+    def closeEvent(self, event):
+        self.cancel_analysis()
+        event.accept()
+
     def _display_result(self, result):
         gain = result["Gain"]
         sign = "+" if gain >= 0 else ""
         self.gain_label.setText(tr("gain_adjustment", sign, gain))
         
-        tc = result["Exceeded_Timecodes"]
-        if tc:
+        events = result.get("Peak_Events", [])
+        if events:
             self.alert_label.show()
-            self.alert_label.setText(tr("warning_peak", len(tc)))
+            if len(events) == 1:
+                self.alert_label.setText(tr("warning_peak_single"))
+            else:
+                self.alert_label.setText(tr("warning_peak_multi", len(events)))
+            
+            lines = []
+            for ev in events:
+                start_tc = format_timecode(ev["start"])
+                sign_p = "+" if ev["max_peak"] >= 0 else ""
+                peak_str = f"{sign_p}{ev['max_peak']:.1f} dBTP"
+                dur = ev.get("duration", 0.0)
+                if dur >= 0.3:
+                    end_tc = format_timecode(ev["end"])
+                    lines.append(tr("peak_event_range", start_tc, end_tc, dur, peak_str))
+                else:
+                    lines.append(tr("peak_event_point", start_tc, peak_str))
+            
             self.timecodes_textbox.show()
-            self.timecodes_textbox.setText("\n".join(tc))
+            self.timecodes_textbox.setText("\n".join(lines))
         else:
             self.alert_label.hide()
             self.timecodes_textbox.hide()
@@ -502,17 +456,32 @@ class MainWindow(QMainWindow):
                 # Target Line
                 self.ax.axhline(y=-23, color='#44aa44', linestyle='--', alpha=0.6, label=tr("legend_target"))
                 
+                # EBU +18 scale: -60 LUFS to +3 LUFS headroom
+                self.ax.set_ylim(-60, 3)
+                
                 self.ax.legend(loc="lower right", fontsize=8, facecolor="#282828", edgecolor="white", labelcolor="white")
                 
                 self.figure.tight_layout()
                 self.canvas.draw()
 
 def run_app():
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("de.ggfplanet.ebur128scanner")
+        except Exception:
+            pass
+
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
-    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logo_tim", "EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png")
-    app.setWindowIcon(QIcon(os.path.abspath(icon_path)))
+    # Icon laden (Windows: icon.ico bevorzugt, Fallback PNG)
+    icon_rel = "logo_tim/icon.ico" if sys.platform == "win32" and os.path.exists(get_resource_path("logo_tim/icon.ico")) else "logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png"
+    icon_path = get_resource_path(icon_rel)
+    if os.path.exists(icon_path):
+        icon = QIcon(icon_path)
+        if not icon.isNull():
+            app.setWindowIcon(icon)
     
     palette = QPalette()
     palette.setColor(QPalette.Window, QColor(40, 40, 40))

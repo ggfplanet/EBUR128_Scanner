@@ -52,7 +52,7 @@ Ein DMG-Installer kann mit dem bereitgestellten Skript erstellt werden:
 ./build_dmg.sh
 ```
 Dies nutzt `PyInstaller` und `hdiutil`, um ein fertiges Installationsimage zu erzeugen. 
-*Hinweis: Das Skript ist ab V1.3 für Apple Silicon (arm64) optimiert, um die Dateigröße gering zu halten. Unterstützung für Intel Macs ist nicht mehr enthalten.*
+*Hinweis: Das Skript ist ab V1.4.0 für Apple Silicon (arm64) optimiert, um die Dateigröße gering zu halten. Unterstützung für Intel Macs ist nicht mehr enthalten.*
 
 ### Windows
 Die Erstellung der Windows-Executable (`.exe`) erfolgt automatisiert über GitHub Actions (siehe `.github/workflows/build.yml`) bei jedem Push auf den `main`-Branch.
@@ -62,6 +62,9 @@ Die Erstellung der Windows-Executable (`.exe`) erfolgt automatisiert über GitHu
 - Webseite: [ggfplanet.de/ebur128scanner](https://ggfplanet.de/ebur128scanner)
 - GitHub: [ggfplanet/EBUR128_Scanner](https://github.com/ggfplanet/EBUR128_Scanner)
 - Kontakt: webseite@timbutenschoen.de
+
+## Credits & Lizenzen
+Dieses Projekt nutzt [FFmpeg](https://ffmpeg.org) für die Medien- und Lautheitsanalyse unter der [GNU GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (bzw. LGPL v2.1+). Der vollständige Quellcode von FFmpeg kann auf [ffmpeg.org/download.html](https://ffmpeg.org/download.html) bezogen werden.
 
 ---
 *Basiert auf den technischen Empfehlungen EBU Tech 3341 und Tech 3342.*

@@ -4,7 +4,7 @@
 [Setup]
 AppId=EBUR128Scanner-Butenschoen-3341
 AppName=EBU R 128 Scanner
-AppVersion=1.3
+AppVersion=1.4.0
 AppPublisher=Tim Butenschön
 AppPublisherURL=https://ggfplanet.de/ebur128scanner
 AppSupportURL=https://github.com/ggfplanet/EBUR128_Scanner
@@ -14,10 +14,11 @@ DefaultGroupName=EBU R 128 Scanner
 AllowNoIcons=yes
 ; Pfad zum Verzeichnis, in dem der fertige Installer abgelegt werden soll
 OutputDir=dist/installer
-OutputBaseFilename=EBU_R_128_Scanner_Setup_V1.3
+OutputBaseFilename=EBU_R_128_Scanner_Setup_V1.4.0
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=logo_tim\icon.ico
 
 [Languages]
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"

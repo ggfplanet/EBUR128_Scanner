@@ -1,0 +1,6 @@
+{
+  "latestVersion": "1.4.0",
+  "downloadUrl": "https://ggfplanet.de/ebur128scanner",
+  "releaseNotes": "Neu in v1.4.0: Native Apple Silicon (arm64) Unterstützung, automatische Erkennung von Stereo- und iPhone-Audiospuren, optimierte EBU +18 Lautheitsskala (-60 bis +3 LUFS) und integrierter Update-Check.",
+  "publishedAt": "2026-09-25"
+}

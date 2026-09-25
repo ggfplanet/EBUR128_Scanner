@@ -15,10 +15,15 @@ def main_with_crash_handler():
         if sys.stderr is None:
             sys.stderr = open(os.devnull, "w")
 
-        # Give our current executable directory priority in PATH so bundled ffmpeg is found implicitly
+        # Give our bundled directory priority in PATH so bundled ffmpeg is found implicitly
         if getattr(sys, 'frozen', False):
-            base_dir = os.path.dirname(sys.executable)
-            os.environ["PATH"] = base_dir + os.pathsep + os.environ.get("PATH", "")
+            base_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+            exe_dir = os.path.dirname(sys.executable)
+            frameworks_dir = os.path.normpath(os.path.join(exe_dir, "..", "Frameworks"))
+            os.environ["PATH"] = base_dir + os.pathsep + frameworks_dir + os.pathsep + exe_dir + os.pathsep + os.environ.get("PATH", "")
+        else:
+            proj_dir = os.path.dirname(os.path.abspath(__file__))
+            os.environ["PATH"] = proj_dir + os.pathsep + os.environ.get("PATH", "")
 
         from ui.app import run_app
         run_app()
