@@ -243,7 +243,8 @@ class InfoDialog(QDialog):
             f"{tr('info_app_license')}<br><br>"
             f"{tr('info_ffmpeg_desc')}<br>"
             f"{tr('info_ffmpeg_license')}<br>"
-            f"{tr('info_ffmpeg_source')}: <a href='https://ffmpeg.org/download.html' style='color: #2a82da; text-decoration: none;'>ffmpeg.org/download.html</a>"
+            f"{tr('info_ffmpeg_source')}: <a href='https://ffmpeg.org/download.html' style='color: #2a82da; text-decoration: none;'>ffmpeg.org/download.html</a><br><br>"
+            f"{tr('info_icons_credits')}"
         )
         cr_body.setWordWrap(True)
         cr_body.setOpenExternalLinks(True)

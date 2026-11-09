@@ -8,9 +8,10 @@ import sys
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 )
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QSize
 from PySide6.QtGui import QDesktopServices
 from ui.i18n import tr
+from ui.icon_helper import get_rune_icon
 from core.update_service import (
     execute_terminal_update,
     DEFAULT_DOWNLOAD_URL,
@@ -75,8 +76,10 @@ class UpdateBanner(QWidget):
         self.updating_label.hide()
         layout.addWidget(self.updating_label)
 
-        # "⚡️ Jetzt aktualisieren" Button
+        # "⚡ Jetzt aktualisieren" Button (Rune Icon: zap)
         self.download_btn = QPushButton()
+        self.download_btn.setIcon(get_rune_icon("zap", normal_color="#ffffff", active_color="#ffffff", size=14))
+        self.download_btn.setIconSize(QSize(14, 14))
         self.download_btn.setFixedHeight(28)
         self.download_btn.setStyleSheet("""
             QPushButton {
@@ -95,20 +98,18 @@ class UpdateBanner(QWidget):
         self.download_btn.clicked.connect(self._on_update_clicked)
         layout.addWidget(self.download_btn)
 
-        # Dismiss / Schließen Button (✕)
-        self.dismiss_btn = QPushButton("✕")
+        # Dismiss / Schließen Button (Rune Icon: close)
+        self.dismiss_btn = QPushButton()
+        self.dismiss_btn.setIcon(get_rune_icon("close", normal_color="#8899a6", active_color="#ffffff", size=14))
+        self.dismiss_btn.setIconSize(QSize(14, 14))
         self.dismiss_btn.setFixedSize(24, 24)
         self.dismiss_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
-                color: #8899a6;
-                font-size: 13px;
-                font-weight: bold;
                 border: none;
                 border-radius: 12px;
             }
             QPushButton:hover {
-                color: #ffffff;
                 background-color: rgba(255, 255, 255, 0.1);
             }
         """)

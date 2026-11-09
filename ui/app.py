@@ -3,7 +3,7 @@ import threading
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QLabel, QPushButton, QProgressBar, QTextEdit, QFileDialog, QMessageBox,
                                QDialog, QCheckBox, QScrollArea, QComboBox, QSpacerItem, QSizePolicy)
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtCore import Qt, Signal, QObject, QSize
 from PySide6.QtGui import QPalette, QColor, QFont, QIcon
 import os
 import subprocess
@@ -17,6 +17,7 @@ MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
 from ui.i18n import tr, VERSION
 from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
 from ui.update_banner import UpdateBanner
+from ui.icon_helper import get_rune_icon
 from core.update_service import check_for_updates
 
 
@@ -195,14 +196,22 @@ class MainWindow(QMainWindow):
         v_label = QLabel(f"V{VERSION}")
         v_label.setStyleSheet("color: #777777; font-size: 10px;")
         
-        info_btn = QPushButton("i")
-        info_btn.setFixedSize(16, 16)
-        info_btn.setStyleSheet("border-radius: 8px; border: 1px solid #777777; color: #777777; font-size: 10px; font-style: italic;")
+        info_btn = QPushButton()
+        info_btn.setIcon(get_rune_icon("info", normal_color="#777777", active_color="#ffffff", size=18))
+        info_btn.setIconSize(QSize(18, 18))
+        info_btn.setFixedSize(24, 24)
+        info_btn.setStyleSheet("QPushButton { border: none; background: transparent; } QPushButton:hover { background: #383838; border-radius: 12px; }")
+        info_btn.setCursor(Qt.PointingHandCursor)
+        info_btn.setToolTip(tr("info_title"))
         info_btn.clicked.connect(self.show_info)
 
-        settings_btn = QPushButton("⚙")
-        settings_btn.setFixedSize(32, 32)
-        settings_btn.setStyleSheet("border: none; color: #777777; font-size: 24px;")
+        settings_btn = QPushButton()
+        settings_btn.setIcon(get_rune_icon("settings", normal_color="#777777", active_color="#ffffff", size=20))
+        settings_btn.setIconSize(QSize(20, 20))
+        settings_btn.setFixedSize(28, 28)
+        settings_btn.setStyleSheet("QPushButton { border: none; background: transparent; } QPushButton:hover { background: #383838; border-radius: 14px; }")
+        settings_btn.setCursor(Qt.PointingHandCursor)
+        settings_btn.setToolTip(tr("settings_title"))
         settings_btn.clicked.connect(self.show_settings)
 
         bottom_layout.addWidget(v_label)

@@ -114,7 +114,8 @@ python -m unittest discover tests
 ## 📜 Credits & Lizenzen
 
 Dieses Projekt steht unter der [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
-Es nutzt [FFmpeg](https://ffmpeg.org) für die Medien- und Lautheitsanalyse unter der [GNU GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (bzw. LGPL v2.1+). Der vollständige Quellcode von FFmpeg kann auf [ffmpeg.org/download.html](https://ffmpeg.org/download.html) bezogen werden.
+- **FFmpeg:** Nutzt [FFmpeg](https://ffmpeg.org) für die Medien- und Lautheitsanalyse unter der [GNU GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.html) (bzw. LGPL v2.1+). Der Quellcode ist auf [ffmpeg.org/download.html](https://ffmpeg.org/download.html) verfügbar.
+- **UI-Icons:** UI-Icons stammen von [Rune Icons](https://runeicons.com) unter der [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) (Copyright Rune Icons Team).
 
 ---
 *Basiert auf den technischen Empfehlungen EBU Tech 3341, EBU Tech 3342 und ITU-R BS.1770.*
