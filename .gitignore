@@ -8,23 +8,33 @@ venv/
 # Build and Distribution
 build/
 dist/
+out/
 *.dmg
+
+# Local Website & Internal Release Workflow (Not on GitHub)
+webseite/
+build_release.sh
+README_WORKFLOW.md
 
 # OS-specific
 .DS_Store
 Thumbs.db
 
+# IDE, Editor & Agent metadata
+.vscode/
+.idea/
+.kilo/
+*.swp
+*.swo
+
 # Test files
-test.wav
-testfiles/
+testfiles/*
+!testfiles/.gitignore
 
 # Downloaded binaries
 ffmpeg
 ffprobe
 *.exe
 
-# Affinity Designer source files
-logo_tim/*.icon/
-
-# Empty placeholder directories
-assets/
+# Affinity / Icon Composer source files
+assets/*.icon/

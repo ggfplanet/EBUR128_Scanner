@@ -370,6 +370,10 @@ class MainWindow(QMainWindow):
         if self.active_process:
             try:
                 self.active_process.terminate()
+                try:
+                    self.active_process.wait(timeout=0.5)
+                except Exception:
+                    self.active_process.kill()
             except Exception:
                 pass
         self.set_loading(False, tr("analysis_cancelled"))
@@ -476,7 +480,7 @@ def run_app():
     app.setStyle("Fusion")
     
     # Icon laden (Windows: icon.ico bevorzugt, Fallback PNG)
-    icon_rel = "logo_tim/icon.ico" if sys.platform == "win32" and os.path.exists(get_resource_path("logo_tim/icon.ico")) else "logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png"
+    icon_rel = "assets/icon.ico" if sys.platform == "win32" and os.path.exists(get_resource_path("assets/icon.ico")) else "assets/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png"
     icon_path = get_resource_path(icon_rel)
     if os.path.exists(icon_path):
         icon = QIcon(icon_path)

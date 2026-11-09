@@ -2,32 +2,44 @@
 Unit tests for update_service according to tim-update skill.
 """
 
+import unittest
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from core.update_service import is_newer_version
+from core.update_service import (
+    is_newer_version,
+    check_for_updates,
+    DEFAULT_MAC_INSTALL_CMD,
+    DEFAULT_WIN_INSTALL_CMD,
+)
 
 
-def test_is_newer_version():
-    # Newer versions
-    assert is_newer_version("1.4.1", "1.4.0") is True
-    assert is_newer_version("1.5.0", "1.4.0") is True
-    assert is_newer_version("2.0.0", "1.4.0") is True
-    assert is_newer_version("v1.4.1", "1.4.0") is True
-    assert is_newer_version("1.4.1", "v1.4.0") is True
-    assert is_newer_version("1.4.0.1", "1.4.0") is True
-    assert is_newer_version("1.4.0-rc1", "1.3.9") is True
+class TestUpdateService(unittest.TestCase):
+    def test_is_newer_version(self):
+        # Newer versions
+        self.assertTrue(is_newer_version("1.5.0", "1.4.0"))
+        self.assertTrue(is_newer_version("1.5.1", "1.5.0"))
+        self.assertTrue(is_newer_version("2.0.0", "1.5.0"))
+        self.assertTrue(is_newer_version("v1.5.1", "1.5.0"))
+        self.assertTrue(is_newer_version("1.5.1", "v1.5.0"))
+        self.assertTrue(is_newer_version("1.5.0.1", "1.5.0"))
+        self.assertTrue(is_newer_version("1.5.0-rc1", "1.4.9"))
 
-    # Same or older versions
-    assert is_newer_version("1.4.0", "1.4.0") is False
-    assert is_newer_version("1.3.9", "1.4.0") is False
-    assert is_newer_version("1.3", "1.4.0") is False
-    assert is_newer_version("0.9.9", "1.4.0") is False
-    assert is_newer_version("v1.4.0", "1.4.0") is False
+        # Same or older versions
+        self.assertFalse(is_newer_version("1.5.0", "1.5.0"))
+        self.assertFalse(is_newer_version("1.4.9", "1.5.0"))
+        self.assertFalse(is_newer_version("1.4", "1.5.0"))
+        self.assertFalse(is_newer_version("0.9.9", "1.5.0"))
+        self.assertFalse(is_newer_version("v1.5.0", "1.5.0"))
 
-    print("All is_newer_version tests passed successfully!")
+    def test_check_for_updates_fail_silent(self):
+        res = check_for_updates("1.5.0", update_url="http://127.0.0.1:1/nonexistent.json", timeout=1)
+        self.assertFalse(res["has_update"])
+        self.assertEqual(res["current_version"], "1.5.0")
+        self.assertEqual(res["mac_install_cmd"], DEFAULT_MAC_INSTALL_CMD)
+        self.assertEqual(res["win_install_cmd"], DEFAULT_WIN_INSTALL_CMD)
 
 
 if __name__ == "__main__":
-    test_is_newer_version()
+    unittest.main()

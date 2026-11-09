@@ -1,4 +1,4 @@
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 
 TRANSLATIONS = {
     "de": {
@@ -49,6 +49,7 @@ TRANSLATIONS = {
         "info_subtitle": "Lautheitsanalyse nach EBU R 128 & ITU-R BS.1770",
         "info_creator_heading": "Entwicklung & Projekt",
         "info_credits_heading": "Credits & Open-Source-Lizenzen",
+        "info_app_license": "Der <b>EBU R 128 Scanner</b> ist freie Software unter der <a href='https://www.gnu.org/licenses/gpl-3.0.html' style='color: #2a82da; text-decoration: none;'>GNU GPL v3.0</a>.",
         "info_ffmpeg_desc": "Dieses Programm nutzt das Open-Source-Projekt <b>FFmpeg</b> für die Medien- und Lautheitsanalyse.",
         "info_ffmpeg_license": "Lizenz: <b>GNU GPL v3.0</b> (bzw. LGPL v2.1+)",
         "info_ffmpeg_source": "Quellcode",
@@ -61,8 +62,12 @@ TRANSLATIONS = {
         "legend_peak": "Peak (> -1 dBTP)",
         "plot_time": "Zeit (s)",
         "plot_lufs": "LUFS",
-        "update_available_title": "Neue Version verfügbar: v{} (Installiert: v{})",
-        "update_download_btn": "Jetzt herunterladen",
+        "update_available_title": "Update verfügbar: v{} (Aktuell: v{})",
+        "update_btn": "⚡️ Jetzt aktualisieren",
+        "update_download_btn": "⚡️ Jetzt aktualisieren",
+        "update_btn_tooltip_mac": "Öffnet die Konsole, aktualisiert die App und beendet dieses Fenster.",
+        "update_btn_tooltip_win": "Öffnet die Webseite im Browser zum Herunterladen des Updates.",
+        "update_running": "⏳ Update läuft... App schließt gleich automatisch.",
         "update_dismiss": "Schließen"
     },
     "en": {
@@ -113,6 +118,7 @@ TRANSLATIONS = {
         "info_subtitle": "Loudness analysis according to EBU R 128 & ITU-R BS.1770",
         "info_creator_heading": "Development & Project",
         "info_credits_heading": "Credits & Open Source Licenses",
+        "info_app_license": "<b>EBU R 128 Scanner</b> is free open-source software licensed under the <a href='https://www.gnu.org/licenses/gpl-3.0.html' style='color: #2a82da; text-decoration: none;'>GNU GPL v3.0</a>.",
         "info_ffmpeg_desc": "This software uses the open-source project <b>FFmpeg</b> for media and loudness analysis.",
         "info_ffmpeg_license": "License: <b>GNU GPL v3.0</b> (or LGPL v2.1+)",
         "info_ffmpeg_source": "Source code",
@@ -125,8 +131,12 @@ TRANSLATIONS = {
         "legend_peak": "Peak (> -1 dBTP)",
         "plot_time": "Time (s)",
         "plot_lufs": "LUFS",
-        "update_available_title": "New version available: v{} (Installed: v{})",
-        "update_download_btn": "Download Now",
+        "update_available_title": "Update available: v{} (Current: v{})",
+        "update_btn": "⚡️ Update Now",
+        "update_download_btn": "⚡️ Update Now",
+        "update_btn_tooltip_mac": "Opens Terminal, updates the app in-place, and closes this window.",
+        "update_btn_tooltip_win": "Opens the website in your browser to download the update.",
+        "update_running": "⏳ Updating... App will close automatically.",
         "update_dismiss": "Dismiss"
     }
 }

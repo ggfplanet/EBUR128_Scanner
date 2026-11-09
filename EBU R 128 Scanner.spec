@@ -4,7 +4,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[('ffmpeg', '.'), ('ffprobe', '.')],
-    datas=[('logo_tim', 'logo_tim')],
+    datas=[('assets', 'assets'), ('LICENSE', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,6 +34,30 @@ a = Analysis(
     ],
     noarchive=False,
 )
+
+# Filter unwanted Qt frameworks, plugins, and resources
+# NOTE: QtDBus is required by QtGui on macOS (otool shows QtGui hard-links @rpath/QtDBus)
+UNWANTED_QT = (
+    'QtWebEngine', 'QtWebEngineCore', 'QtWebEngineWidgets',
+    'QtQuick', 'QtQuickWidgets', 'QtQuickControls2',
+    'QtQml', 'QtQmlModels',
+    'QtVirtualKeyboard', 'virtualkeyboard',
+    'QtSql', 'QtTest', 'QtMultimedia', 'QtLocation', 'QtPositioning',
+    'QtSensors', 'QtBluetooth', 'QtNfc', 'QtCharts', 'Qt3D',
+    'QtGamepad', 'QtPdf', 'QtDataVisualization', 'QtRemoteObjects',
+    'QtScxml', 'QtWebChannel', 'QtWebSockets', 'QtWebView',
+)
+
+a.binaries = [
+    x for x in a.binaries 
+    if not any(unwanted in x[0] or (isinstance(x[1], str) and unwanted in x[1]) for unwanted in UNWANTED_QT)
+]
+
+a.datas = [
+    x for x in a.datas 
+    if not any(unwanted in x[0] or (isinstance(x[1], str) and unwanted in x[1]) for unwanted in UNWANTED_QT)
+]
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -52,7 +76,7 @@ exe = EXE(
     target_arch='arm64',
     codesign_identity=None,
     entitlements_file=None,
-    icon=['logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png'],
+    icon=['assets/icon.icns'],
 )
 coll = COLLECT(
     exe,
@@ -66,14 +90,14 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='EBU R 128 Scanner.app',
-    icon='logo_tim/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png',
+    icon='assets/icon.icns',
     bundle_identifier='de.ggfplanet.ebur128scanner',
     info_plist={
         'CFBundleName': 'EBU R 128 Scanner',
         'CFBundleDisplayName': 'EBU R 128 Scanner',
         'CFBundleIdentifier': 'de.ggfplanet.ebur128scanner',
-        'CFBundleVersion': '1.4.0',
-        'CFBundleShortVersionString': '1.4.0',
+        'CFBundleVersion': '1.5.0',
+        'CFBundleShortVersionString': '1.5.0',
         'NSHighResolutionCapable': True,
         'NSRequiresAquaSystemAppearance': False,
         'CFBundlePackageType': 'APPL',

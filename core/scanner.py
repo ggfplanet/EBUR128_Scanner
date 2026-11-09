@@ -34,15 +34,6 @@ def get_audio_streams(file_path: str) -> list[dict[str, Any]]:
     return audio_streams
 
 
-def is_standard_layout(audio_streams: list[dict[str, Any]]) -> bool:
-    """
-    Prüft, ob die Datei ein eindeutiges Standard-Layout aufweist:
-    - Genau 1 Audiospur (Mono, Stereo, 5.1 usw.)
-    - Genau 2 Mono-Spuren (klassisches Dual-Mono Stereopaar)
-    """
-    return get_standard_selection(audio_streams) is not None
-
-
 def get_standard_selection(audio_streams: list[dict[str, Any]]) -> list[int] | None:
     """
     Gibt die Liste der Stream-Indizes zurück, wenn das Layout eindeutig ist,

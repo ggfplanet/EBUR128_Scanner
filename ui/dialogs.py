@@ -240,6 +240,7 @@ class InfoDialog(QDialog):
         cr_layout.addWidget(cr_head)
         
         cr_body = QLabel(
+            f"{tr('info_app_license')}<br><br>"
             f"{tr('info_ffmpeg_desc')}<br>"
             f"{tr('info_ffmpeg_license')}<br>"
             f"{tr('info_ffmpeg_source')}: <a href='https://ffmpeg.org/download.html' style='color: #2a82da; text-decoration: none;'>ffmpeg.org/download.html</a>"

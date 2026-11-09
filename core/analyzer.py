@@ -2,7 +2,7 @@ from __future__ import annotations
 import subprocess
 import re
 import threading
-from typing import TypedDict, Callable, Any
+from typing import TypedDict, Callable, Any, Iterable
 
 
 class PeakEvent(TypedDict):
@@ -71,6 +71,40 @@ def cluster_peak_events(exceedances: list[tuple[float, float]], max_gap: float =
     return events
 
 
+def parse_ebur128_summary(lines: Iterable[str] | str) -> dict[str, float | None]:
+    """
+    Parst den finalen 'Summary:'-Block aus der FFmpeg-ebur128-Ausgabe.
+    Gibt ein Dict mit I, LRA, Peak und Gain zurück.
+    """
+    i_re = re.compile(r"I:\s*([-+\d\.]+)\s*LUFS")
+    lra_re = re.compile(r"LRA:\s*([-+\d\.]+)\s*LU")
+    peak_re = re.compile(r"(?:True\s+peak|Peak):\s*([-+\d\.]+)\s*(?:dBTP|dBFS)", re.IGNORECASE)
+
+    in_summary = False
+    data: dict[str, float | None] = {"I": None, "LRA": None, "Peak": None, "Gain": None}
+
+    line_iter = lines.splitlines() if isinstance(lines, str) else lines
+
+    for line in line_iter:
+        if "Summary:" in line:
+            in_summary = True
+        if in_summary:
+            m_i = i_re.search(line)
+            if m_i:
+                data["I"] = float(m_i.group(1))
+            m_lra = lra_re.search(line)
+            if m_lra:
+                data["LRA"] = float(m_lra.group(1))
+            m_peak = peak_re.search(line)
+            if m_peak:
+                data["Peak"] = float(m_peak.group(1))
+
+    if data["I"] is not None:
+        data["Gain"] = round(-23.0 - data["I"], 2)
+
+    return data
+
+
 def analyze_loudness(
     file_path: str,
     stream_indices: list[int] | None = None,
@@ -121,6 +155,7 @@ def analyze_loudness(
         on_process_started(process)
 
     raw_peaks: list[tuple[float, float]] = []
+    summary_lines: list[str] = []
     summary_data: LoudnessResult = {
         "I": None,
         "LRA": None,
@@ -136,9 +171,6 @@ def analyze_loudness(
 
     # Regex für Zeitausgabe: t, S (short term), TPK (True peak)
     line_re = re.compile(r"t:\s*([\d\.]+).*?S:\s*([-+\d\.]+).*?(?:True peak|TPK):\s*([-+\d\.]+)")
-    i_re = re.compile(r"I:\s*([-+\d\.]+)\s*LUFS")
-    lra_re = re.compile(r"LRA:\s*([-+\d\.]+)\s*LU")
-    peak_re = re.compile(r"Peak:\s*([-+\d\.]+)\s*(?:dBTP|dBFS)")
     
     in_summary = False
 
@@ -158,17 +190,7 @@ def analyze_loudness(
                 in_summary = True
 
             if in_summary:
-                m_i = i_re.search(line)
-                if m_i:
-                    summary_data["I"] = float(m_i.group(1))
-                
-                m_lra = lra_re.search(line)
-                if m_lra:
-                    summary_data["LRA"] = float(m_lra.group(1))
-                
-                m_peak = peak_re.search(line)
-                if m_peak:
-                    summary_data["Peak"] = float(m_peak.group(1))
+                summary_lines.append(line)
             else:
                 m_prog = line_re.search(line)
                 if m_prog:
@@ -197,6 +219,13 @@ def analyze_loudness(
         summary_data["Cancelled"] = True
         return summary_data
 
+    # Parst die gesammelten Summary-Zeilen
+    parsed = parse_ebur128_summary(summary_lines)
+    summary_data["I"] = parsed["I"]
+    summary_data["LRA"] = parsed["LRA"]
+    summary_data["Peak"] = parsed["Peak"]
+    summary_data["Gain"] = parsed["Gain"]
+
     # Fehlerbehandlung: Wenn FFmpeg mit Fehler abbrach oder kein Summary lieferte
     if process.returncode != 0 or not in_summary or summary_data["I"] is None:
         summary_data["I"] = None
@@ -205,10 +234,9 @@ def analyze_loudness(
         summary_data["Gain"] = None
         return summary_data
 
-    summary_data["Gain"] = round(-23.0 - summary_data["I"], 2)
-
     # Clustere zusammenhängende True-Peak-Überschreitungen zu Events
     events = cluster_peak_events(raw_peaks)
     summary_data["Peak_Events"] = events
     summary_data["Exceeded_Timecodes"] = [format_timecode(e["start"]) for e in events]
     return summary_data
+
