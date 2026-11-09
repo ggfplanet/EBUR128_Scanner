@@ -32,7 +32,7 @@ class StreamSelectionDialog(QDialog):
         layout.setSpacing(12)
         
         self.info_label = QLabel(tr("stream_sel_info"))
-        self.info_label.setStyleSheet("font-size: 13px; color: #e0e0e0;")
+        self.info_label.setStyleSheet("font-size: 13px; color: #AEAEB2;")
         self.info_label.setWordWrap(True)
         layout.addWidget(self.info_label)
         
@@ -88,7 +88,19 @@ class StreamSelectionDialog(QDialog):
         self.btn = QPushButton(tr("analyze"))
         self.btn.clicked.connect(self.on_submit)
         self.btn.setMinimumHeight(40)
-        self.btn.setStyleSheet("font-size: 14px; font-weight: bold;")
+        self.btn.setStyleSheet("""
+            QPushButton {
+                background-color: #00FF8B;
+                color: #1C1C1E;
+                font-size: 14px;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #33FFAA;
+            }
+        """)
         layout.addWidget(self.btn)
 
     def _on_cb_toggled(self, changed_cb, checked):
@@ -161,6 +173,20 @@ class SettingsDialog(QDialog):
         layout.addStretch()
         
         close_btn = QPushButton(tr("close"))
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3A3A3C;
+                color: #F2F2F7;
+                font-weight: bold;
+                border: 1px solid #48484A;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #48484A;
+                border-color: #00FF8B;
+            }
+        """)
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
 
@@ -184,43 +210,42 @@ class InfoDialog(QDialog):
         # Header (Title & Subtitle)
         header_layout = QVBoxLayout()
         header_layout.setSpacing(4)
-        title_label = QLabel(
-            f"<span style='font-size: 18px; font-weight: bold;'>EBU R 128 Scanner</span> "
-            f"<span style='font-size: 13px; color: #2a82da; font-weight: bold;'>v{VERSION}</span>"
-        )
+        title_label = QLabel("<span style='font-size: 18px; font-weight: bold;'>EBU R 128 Scanner</span>")
         title_label.setStyleSheet("border: none; background: transparent;")
         header_layout.addWidget(title_label)
         
         subtitle_label = QLabel(tr("info_subtitle"))
-        subtitle_label.setStyleSheet("color: #9e9e9e; font-size: 12px; border: none; background: transparent;")
+        subtitle_label.setStyleSheet("color: #AEAEB2; font-size: 12px; border: none; background: transparent;")
         header_layout.addWidget(subtitle_label)
         layout.addLayout(header_layout)
         
-        # Card 1: Creator & Project
+        # Card 1: Entwickler-Info (gemäß entwickler-info Skill)
         creator_box = QWidget()
         creator_box.setObjectName("creatorCard")
         creator_box.setStyleSheet(
-            "#creatorCard { background-color: #2b2b2b; border: 1px solid #3c3c3c; border-radius: 8px; } "
+            "#creatorCard { background-color: #2C2C2E; border: 1px solid #48484A; border-radius: 8px; } "
             "QLabel { border: none; background: transparent; }"
         )
         c_layout = QVBoxLayout(creator_box)
         c_layout.setContentsMargins(16, 12, 16, 14)
-        c_layout.setSpacing(6)
+        c_layout.setSpacing(8)
         
-        c_head = QLabel(f"<b>{tr('info_creator_heading')}</b>")
-        c_head.setStyleSheet("color: #ffffff; font-size: 13px;")
+        c_head = QLabel(f"<b>{tr('info_title')}</b>")
+        c_head.setStyleSheet("color: #F2F2F7; font-size: 13px;")
         c_layout.addWidget(c_head)
         
         c_body = QLabel(
-            "Tim Butenschön<br>"
-            "<a href='https://ggfplanet.de/ebur128scanner' style='color: #2a82da; text-decoration: none;'>ggfplanet.de/ebur128scanner</a> &nbsp;•&nbsp; "
-            f"<a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #2a82da; text-decoration: none;'>{tr('project_link_text')}</a><br>"
-            "<a href='mailto:webseite@timbutenschoen.de' style='color: #888888; text-decoration: none;'>webseite@timbutenschoen.de</a>"
+            f"<table cellpadding='2' style='font-size: 12px; line-height: 1.5;'>"
+            f"<tr><td style='color: #AEAEB2; width: 85px;'>{tr('info_version')}:</td><td><b style='color: #00FF8B;'>v{VERSION}</b></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>{tr('info_developer')}:</td><td style='color: #F2F2F7; font-weight: 500;'>Tim Butenschön</td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>{tr('info_email')}:</td><td><a href='mailto:webseite@timbutenschoen.de' style='color: #00FF8B; text-decoration: none;'>webseite@timbutenschoen.de</a></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>{tr('info_website')}:</td><td><a href='https://ggfplanet.de/ebur128scanner' style='color: #00FF8B; text-decoration: none;'>ggfplanet.de/ebur128scanner</a></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>GitHub:</td><td><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #00FF8B; text-decoration: none;'>github.com/ggfplanet/EBUR128_Scanner</a></td></tr>"
+            f"</table>"
         )
         c_body.setWordWrap(True)
         c_body.setOpenExternalLinks(True)
         c_body.setTextInteractionFlags(Qt.TextBrowserInteraction)
-        c_body.setStyleSheet("font-size: 12px; line-height: 1.45;")
         c_layout.addWidget(c_body)
         layout.addWidget(creator_box)
         
@@ -228,7 +253,7 @@ class InfoDialog(QDialog):
         credits_box = QWidget()
         credits_box.setObjectName("creditsCard")
         credits_box.setStyleSheet(
-            "#creditsCard { background-color: #2b2b2b; border: 1px solid #3c3c3c; border-radius: 8px; } "
+            "#creditsCard { background-color: #2C2C2E; border: 1px solid #48484A; border-radius: 8px; } "
             "QLabel { border: none; background: transparent; }"
         )
         cr_layout = QVBoxLayout(credits_box)
@@ -236,14 +261,14 @@ class InfoDialog(QDialog):
         cr_layout.setSpacing(6)
         
         cr_head = QLabel(f"<b>{tr('info_credits_heading')}</b>")
-        cr_head.setStyleSheet("color: #ffffff; font-size: 13px;")
+        cr_head.setStyleSheet("color: #F2F2F7; font-size: 13px;")
         cr_layout.addWidget(cr_head)
         
         cr_body = QLabel(
             f"{tr('info_app_license')}<br><br>"
             f"{tr('info_ffmpeg_desc')}<br>"
             f"{tr('info_ffmpeg_license')}<br>"
-            f"{tr('info_ffmpeg_source')}: <a href='https://ffmpeg.org/download.html' style='color: #2a82da; text-decoration: none;'>ffmpeg.org/download.html</a><br><br>"
+            f"{tr('info_ffmpeg_source')}: <a href='https://ffmpeg.org/download.html' style='color: #00FF8B; text-decoration: none;'>ffmpeg.org/download.html</a><br><br>"
             f"{tr('info_icons_credits')}"
         )
         cr_body.setWordWrap(True)
@@ -262,8 +287,8 @@ class InfoDialog(QDialog):
         close_btn.setMinimumWidth(100)
         close_btn.setMinimumHeight(32)
         close_btn.setStyleSheet(
-            "QPushButton { background-color: #383838; border: 1px solid #4d4d4d; border-radius: 6px; font-weight: bold; } "
-            "QPushButton:hover { background-color: #444444; border-color: #2a82da; }"
+            "QPushButton { background-color: #3A3A3C; color: #F2F2F7; border: 1px solid #48484A; border-radius: 6px; font-weight: bold; } "
+            "QPushButton:hover { background-color: #48484A; border-color: #00FF8B; }"
         )
         close_btn.clicked.connect(self.accept)
         btn_layout.addWidget(close_btn)

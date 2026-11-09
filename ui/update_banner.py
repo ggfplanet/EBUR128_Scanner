@@ -31,13 +31,12 @@ class UpdateBanner(QWidget):
         self.is_updating = False
         self.hide()  # Standardmäßig unsichtbar
 
-        # Widget-Styling: Dezenter Akzent mit feinem blauen Rand
+        # Widget-Styling: Dezenter Akzent mit Vorlagenfarben
         self.setObjectName("updateBanner")
         self.setStyleSheet("""
             #updateBanner {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
-                                            stop:0 #1a2a3a, stop:1 #222d38);
-                border: 1px solid #2a82da;
+                background-color: #2C2C2E;
+                border: 1px solid #48484A;
                 border-radius: 6px;
             }
             QLabel {
@@ -60,11 +59,11 @@ class UpdateBanner(QWidget):
         text_layout.setSpacing(2)
 
         self.title_label = QLabel()
-        self.title_label.setStyleSheet("color: #ffffff; font-weight: bold; font-size: 12px;")
+        self.title_label.setStyleSheet("color: #F2F2F7; font-weight: bold; font-size: 12px;")
         text_layout.addWidget(self.title_label)
 
         self.notes_label = QLabel()
-        self.notes_label.setStyleSheet("color: #9ab4cc; font-size: 11px;")
+        self.notes_label.setStyleSheet("color: #AEAEB2; font-size: 11px;")
         self.notes_label.setWordWrap(True)
         text_layout.addWidget(self.notes_label)
 
@@ -72,19 +71,19 @@ class UpdateBanner(QWidget):
 
         # Ladehinweis während des In-Place Updates auf macOS
         self.updating_label = QLabel()
-        self.updating_label.setStyleSheet("color: #5bc0de; font-size: 11px; font-weight: bold; padding: 0 6px;")
+        self.updating_label.setStyleSheet("color: #00FF8B; font-size: 11px; font-weight: bold; padding: 0 6px;")
         self.updating_label.hide()
         layout.addWidget(self.updating_label)
 
         # "⚡ Jetzt aktualisieren" Button (Rune Icon: zap)
         self.download_btn = QPushButton()
-        self.download_btn.setIcon(get_rune_icon("zap", normal_color="#ffffff", active_color="#ffffff", size=14))
+        self.download_btn.setIcon(get_rune_icon("zap", normal_color="#1C1C1E", active_color="#1C1C1E", size=14))
         self.download_btn.setIconSize(QSize(14, 14))
         self.download_btn.setFixedHeight(28)
         self.download_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2a82da;
-                color: #ffffff;
+                background-color: #00FF8B;
+                color: #1C1C1E;
                 font-size: 11px;
                 font-weight: bold;
                 border-radius: 4px;
@@ -92,7 +91,7 @@ class UpdateBanner(QWidget):
                 border: none;
             }
             QPushButton:hover {
-                background-color: #3b93eb;
+                background-color: #33FFAA;
             }
         """)
         self.download_btn.clicked.connect(self._on_update_clicked)
@@ -100,7 +99,7 @@ class UpdateBanner(QWidget):
 
         # Dismiss / Schließen Button (Rune Icon: close)
         self.dismiss_btn = QPushButton()
-        self.dismiss_btn.setIcon(get_rune_icon("close", normal_color="#8899a6", active_color="#ffffff", size=14))
+        self.dismiss_btn.setIcon(get_rune_icon("close", normal_color="#AEAEB2", active_color="#F2F2F7", size=14))
         self.dismiss_btn.setIconSize(QSize(14, 14))
         self.dismiss_btn.setFixedSize(24, 24)
         self.dismiss_btn.setStyleSheet("""
@@ -110,7 +109,7 @@ class UpdateBanner(QWidget):
                 border-radius: 12px;
             }
             QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: #48484A;
             }
         """)
         self.dismiss_btn.clicked.connect(self.hide)

@@ -86,14 +86,32 @@ class MainWindow(QMainWindow):
         self.update_banner = UpdateBanner()
         self.main_layout.addWidget(self.update_banner)
         
-        # Header
+        # Header Row mit zentriertem Titel und Einstellungen-Button rechts oben
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(0, 0, 0, 0)
+        
+        spacer_left = QWidget()
+        spacer_left.setFixedSize(28, 28)
+        header_row.addWidget(spacer_left)
+        
         self.header_label = QLabel()
         self.header_label.setStyleSheet("font-size: 24px; font-weight: bold;")
         self.header_label.setAlignment(Qt.AlignCenter)
-        self.main_layout.addWidget(self.header_label)
+        header_row.addWidget(self.header_label, stretch=1)
+        
+        self.settings_btn = QPushButton()
+        self.settings_btn.setIcon(get_rune_icon("settings", normal_color="#AEAEB2", active_color="#F2F2F7", size=20))
+        self.settings_btn.setIconSize(QSize(20, 20))
+        self.settings_btn.setFixedSize(28, 28)
+        self.settings_btn.setStyleSheet("QPushButton { border: none; background: transparent; } QPushButton:hover { background: #48484A; border-radius: 14px; }")
+        self.settings_btn.setCursor(Qt.PointingHandCursor)
+        self.settings_btn.clicked.connect(self.show_settings)
+        header_row.addWidget(self.settings_btn)
+        
+        self.main_layout.addLayout(header_row)
 
         self.info_label = QLabel()
-        self.info_label.setStyleSheet("font-size: 14px;")
+        self.info_label.setStyleSheet("font-size: 14px; color: #AEAEB2;")
         self.info_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.info_label)
         self.main_layout.addSpacing(20)
@@ -105,7 +123,23 @@ class MainWindow(QMainWindow):
         
         self.select_btn = QPushButton()
         self.select_btn.setMinimumHeight(50)
-        self.select_btn.setStyleSheet("font-size: 16px; font-weight: bold;")
+        self.select_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #00FF8B;
+                color: #1C1C1E;
+                font-size: 16px;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #33FFAA;
+            }
+            QPushButton:disabled {
+                background-color: #3A3A3C;
+                color: #636366;
+            }
+        """)
         self.select_btn.clicked.connect(self.open_file)
         self.action_layout.addWidget(self.select_btn)
         
@@ -115,7 +149,7 @@ class MainWindow(QMainWindow):
         self.action_layout.addWidget(self.progress_bar)
         
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: gray;")
+        self.status_label.setStyleSheet("color: #AEAEB2;")
         self.status_label.setAlignment(Qt.AlignCenter)
         self.action_layout.addWidget(self.status_label)
 
@@ -123,18 +157,18 @@ class MainWindow(QMainWindow):
         self.cancel_btn.setMinimumHeight(32)
         self.cancel_btn.setStyleSheet("""
             QPushButton {
-                background-color: #383838;
-                color: #e0e0e0;
+                background-color: #3A3A3C;
+                color: #F2F2F7;
                 font-size: 13px;
                 font-weight: bold;
-                border: 1px solid #555555;
+                border: 1px solid #48484A;
                 border-radius: 4px;
                 padding: 4px 14px;
             }
             QPushButton:hover {
-                background-color: #4a4a4a;
-                border-color: #ff5555;
-                color: #ffffff;
+                background-color: #48484A;
+                border-color: #FF453A;
+                color: #F2F2F7;
             }
         """)
         self.cancel_btn.clicked.connect(self.cancel_analysis)
@@ -155,13 +189,21 @@ class MainWindow(QMainWindow):
         self.result_layout.addWidget(self.gain_label)
         
         self.alert_label = QLabel("")
-        self.alert_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #ff5555;")
+        self.alert_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #FF453A;")
         self.alert_label.setAlignment(Qt.AlignCenter)
         self.result_layout.addWidget(self.alert_label)
         
         self.timecodes_textbox = QTextEdit()
         self.timecodes_textbox.setMaximumHeight(80)
         self.timecodes_textbox.setReadOnly(True)
+        self.timecodes_textbox.setStyleSheet("""
+            QTextEdit {
+                background-color: #2C2C2E;
+                color: #F2F2F7;
+                border: 1px solid #48484A;
+                border-radius: 6px;
+            }
+        """)
         self.result_layout.addWidget(self.timecodes_textbox)
         
         self.adv_widget = QWidget()
@@ -191,32 +233,31 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(self.result_widget)
         self.main_layout.addStretch()
 
-        # Bottom Bar: VERSION, info, settings
+        # Bottom Bar: Entwickler-Info Button (gemäß entwickler-info Skill)
         bottom_layout = QHBoxLayout()
-        v_label = QLabel(f"V{VERSION}")
-        v_label.setStyleSheet("color: #777777; font-size: 10px;")
+        bottom_layout.setContentsMargins(0, 8, 0, 0)
         
-        info_btn = QPushButton()
-        info_btn.setIcon(get_rune_icon("info", normal_color="#777777", active_color="#ffffff", size=18))
-        info_btn.setIconSize(QSize(18, 18))
-        info_btn.setFixedSize(24, 24)
-        info_btn.setStyleSheet("QPushButton { border: none; background: transparent; } QPushButton:hover { background: #383838; border-radius: 12px; }")
-        info_btn.setCursor(Qt.PointingHandCursor)
-        info_btn.setToolTip(tr("info_title"))
-        info_btn.clicked.connect(self.show_info)
-
-        settings_btn = QPushButton()
-        settings_btn.setIcon(get_rune_icon("settings", normal_color="#777777", active_color="#ffffff", size=20))
-        settings_btn.setIconSize(QSize(20, 20))
-        settings_btn.setFixedSize(28, 28)
-        settings_btn.setStyleSheet("QPushButton { border: none; background: transparent; } QPushButton:hover { background: #383838; border-radius: 14px; }")
-        settings_btn.setCursor(Qt.PointingHandCursor)
-        settings_btn.setToolTip(tr("settings_title"))
-        settings_btn.clicked.connect(self.show_settings)
-
-        bottom_layout.addWidget(v_label)
-        bottom_layout.addWidget(info_btn)
-        bottom_layout.addWidget(settings_btn)
+        self.dev_info_btn = QPushButton()
+        self.dev_info_btn.setIcon(get_rune_icon("info", normal_color="#AEAEB2", active_color="#F2F2F7", size=14))
+        self.dev_info_btn.setIconSize(QSize(14, 14))
+        self.dev_info_btn.setCursor(Qt.PointingHandCursor)
+        self.dev_info_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: 1px solid #48484A;
+                border-radius: 6px;
+                padding: 4px 10px;
+                color: #AEAEB2;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #3A3A3C;
+                border-color: #00FF8B;
+                color: #F2F2F7;
+            }
+        """)
+        self.dev_info_btn.clicked.connect(self.show_info)
+        bottom_layout.addWidget(self.dev_info_btn)
         bottom_layout.addStretch()
 
         self.main_layout.addLayout(bottom_layout)
@@ -257,6 +298,9 @@ class MainWindow(QMainWindow):
         self.info_label.setText(tr("info_text"))
         self.select_btn.setText(tr("select_file"))
         self.cancel_btn.setText(tr("cancel"))
+        self.settings_btn.setToolTip(tr("settings_title"))
+        self.dev_info_btn.setText(f" {tr('dev_info_btn')}")
+        self.dev_info_btn.setToolTip(tr("info_title"))
 
         if hasattr(self, 'update_banner'):
             self.update_banner.update_texts()
@@ -395,6 +439,13 @@ class MainWindow(QMainWindow):
         sign = "+" if gain >= 0 else ""
         self.gain_label.setText(tr("gain_adjustment", sign, gain))
         
+        # Rot wenn größer als 1dB + oder - (> 1.0 oder < -1.0), Grün wenn im Bereich [-1.0, 1.0]
+        if round(abs(gain), 1) > 1.0:
+            gain_color = "#FF453A"  # Rot
+        else:
+            gain_color = "#30D158"  # Grün
+        self.gain_label.setStyleSheet(f"font-size: 28px; font-weight: bold; color: {gain_color};")
+        
         events = result.get("Peak_Events", [])
         if events:
             self.alert_label.show()
@@ -478,19 +529,20 @@ def run_app():
             app.setWindowIcon(icon)
     
     palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(40, 40, 40))
-    palette.setColor(QPalette.WindowText, Qt.white)
-    palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.ToolTipBase, Qt.black)
-    palette.setColor(QPalette.ToolTipText, Qt.white)
-    palette.setColor(QPalette.Text, Qt.white)
-    palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.ButtonText, Qt.white)
-    palette.setColor(QPalette.BrightText, Qt.red)
-    palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.HighlightedText, Qt.black)
+    palette.setColor(QPalette.Window, QColor("#1C1C1E"))
+    palette.setColor(QPalette.WindowText, QColor("#F2F2F7"))
+    palette.setColor(QPalette.Base, QColor("#1C1C1E"))
+    palette.setColor(QPalette.AlternateBase, QColor("#2C2C2E"))
+    palette.setColor(QPalette.ToolTipBase, QColor("#3A3A3C"))
+    palette.setColor(QPalette.ToolTipText, QColor("#F2F2F7"))
+    palette.setColor(QPalette.Text, QColor("#F2F2F7"))
+    palette.setColor(QPalette.Button, QColor("#3A3A3C"))
+    palette.setColor(QPalette.ButtonText, QColor("#F2F2F7"))
+    palette.setColor(QPalette.BrightText, QColor("#FF453A"))
+    palette.setColor(QPalette.Link, QColor("#00FF8B"))
+    palette.setColor(QPalette.Highlight, QColor("#00FF8B"))
+    palette.setColor(QPalette.HighlightedText, QColor("#1C1C1E"))
+    palette.setColor(QPalette.PlaceholderText, QColor("#636366"))
     app.setPalette(palette)
     
     window = MainWindow()

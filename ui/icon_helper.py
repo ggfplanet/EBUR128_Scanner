@@ -22,8 +22,8 @@ def get_icon_path(name: str) -> Path:
 
 def get_rune_icon(
     name: str,
-    normal_color: str = "#777777",
-    active_color: str = "#ffffff",
+    normal_color: str = "#AEAEB2",
+    active_color: str = "#F2F2F7",
     size: int = 24,
 ) -> QIcon:
     """
@@ -59,3 +59,4 @@ def get_rune_icon(
         icon.addPixmap(pixmap, mode)
 
     return icon
+
