@@ -63,6 +63,22 @@ class TestUIPaletteAndGain(unittest.TestCase):
         self.assertIn("Plus Jakarta Sans", families)
         self.assertIn("JetBrains Mono", families)
 
+    def test_determinate_progress_bar(self):
+        self.window.total_duration = 235.0  # 03:55
+        self.window.progress_bar.setRange(0, 100)
+        self.window.update_progress(83.0)   # 01:23 -> 35%
+        self.assertEqual(self.window.progress_bar.value(), 35)
+        self.assertIn("35 % • 01:23 / 03:55", self.window.status_label.text())
+
+    def test_indeterminate_progress_fallback(self):
+        self.window.total_duration = None
+        self.window.progress_bar.setRange(0, 0)
+        self.window.update_progress(12.3)
+        self.assertIn("12.3s", self.window.status_label.text())
+
+    def test_accept_drops_enabled(self):
+        self.assertTrue(self.window.acceptDrops())
+
 
 if __name__ == "__main__":
     unittest.main()

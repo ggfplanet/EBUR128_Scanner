@@ -8,7 +8,7 @@ from PySide6.QtGui import QPalette, QColor, QFont, QIcon, QFontDatabase
 import os
 import subprocess
 
-from core.scanner import get_audio_streams, get_standard_selection
+from core.scanner import get_audio_streams, get_standard_selection, extract_duration, format_short_time
 from core.analyzer import analyze_loudness, format_timecode
 
 import importlib.util
@@ -18,7 +18,10 @@ from ui.i18n import tr, VERSION
 from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
 from ui.update_banner import UpdateBanner
 from ui.icon_helper import get_rune_icon
-from ui.resources import get_resource_path, format_user_error, init_fonts
+from ui.resources import (
+    get_resource_path, format_user_error, init_fonts, setup_app_theme,
+    SELECT_BTN_STYLE, SELECT_BTN_DRAG_STYLE, PROGRESS_BAR_STYLE
+)
 from core.update_service import check_for_updates
 
 
@@ -35,6 +38,7 @@ class MainWindow(QMainWindow):
         init_fonts()
         self.resize(600, 750)
         self.setMinimumSize(560, 680)
+        self.setAcceptDrops(True)
         if not QApplication.windowIcon().isNull():
             self.setWindowIcon(QApplication.windowIcon())
         
@@ -95,35 +99,15 @@ class MainWindow(QMainWindow):
         
         self.select_btn = QPushButton()
         self.select_btn.setMinimumHeight(50)
-        self.select_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2C2C2E;
-                color: #00FF8B;
-                font-size: 16px;
-                font-weight: bold;
-                border: 1px solid #00FF8B;
-                border-radius: 8px;
-            }
-            QPushButton:hover {
-                background-color: #3A3A3C;
-                border-color: #33FFAA;
-                color: #33FFAA;
-            }
-            QPushButton:pressed {
-                background-color: #1C1C1E;
-                border-color: #00CC6A;
-            }
-            QPushButton:disabled {
-                background-color: #242426;
-                border: 1px solid #3A3A3C;
-                color: #636366;
-            }
-        """)
+        self.select_btn.setStyleSheet(SELECT_BTN_STYLE)
         self.select_btn.clicked.connect(self.open_file)
         self.action_layout.addWidget(self.select_btn)
         
         self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 0) # Indeterminate
+        self.progress_bar.setRange(0, 0) # Indeterminate default
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setFixedHeight(8)
+        self.progress_bar.setStyleSheet(PROGRESS_BAR_STYLE)
         self.progress_bar.hide()
         self.action_layout.addWidget(self.progress_bar)
         
@@ -248,6 +232,7 @@ class MainWindow(QMainWindow):
         
         self.current_file = None
         self.current_result = None
+        self.total_duration = None
 
         self.update_texts()
         self._start_update_check()
@@ -314,6 +299,36 @@ class MainWindow(QMainWindow):
             self.current_file = filepath
             self.start_analysis_flow()
 
+    def dragEnterEvent(self, event):
+        if not self.select_btn.isEnabled() or not event.mimeData().hasUrls():
+            event.ignore()
+            return
+        for url in event.mimeData().urls():
+            local_path = url.toLocalFile()
+            if local_path and os.path.isfile(local_path):
+                self.select_btn.setStyleSheet(SELECT_BTN_DRAG_STYLE)
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+    def dragLeaveEvent(self, event):
+        self.select_btn.setStyleSheet(SELECT_BTN_STYLE)
+        event.accept()
+
+    def dropEvent(self, event):
+        self.select_btn.setStyleSheet(SELECT_BTN_STYLE)
+        if not self.select_btn.isEnabled() or not event.mimeData().hasUrls():
+            event.ignore()
+            return
+        for url in event.mimeData().urls():
+            local_path = url.toLocalFile()
+            if local_path and os.path.isfile(local_path):
+                event.acceptProposedAction()
+                self.current_file = local_path
+                self.start_analysis_flow()
+                return
+        event.ignore()
+
     def set_loading(self, loading, text=""):
         if loading:
             self.select_btn.setEnabled(False)
@@ -330,6 +345,8 @@ class MainWindow(QMainWindow):
             self.status_label.setText(text)
 
     def start_analysis_flow(self):
+        self.total_duration = None
+        self.progress_bar.setRange(0, 0)
         self.set_loading(True, tr("reading_structure"))
         threading.Thread(target=self._probe_thread, daemon=True).start()
 
@@ -349,6 +366,7 @@ class MainWindow(QMainWindow):
             self.on_error(tr("no_audio"))
             return
 
+        self.total_duration = extract_duration(streams)
         standard_sel = get_standard_selection(streams)
         if standard_sel is not None:
             self.status_label.setText(tr("standard_layout"))
@@ -363,6 +381,11 @@ class MainWindow(QMainWindow):
     def _start_ffmpeg_analysis(self, stream_indices):
         self.cancel_event.clear()
         self.active_process = None
+        if self.total_duration and self.total_duration > 0:
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(0)
+        else:
+            self.progress_bar.setRange(0, 0)
         threading.Thread(target=self._analyze_thread, args=(stream_indices,), daemon=True).start()
 
     def _analyze_thread(self, stream_indices):
@@ -399,13 +422,25 @@ class MainWindow(QMainWindow):
         self.set_loading(False, tr("analysis_cancelled"))
 
     def update_progress(self, t):
-        self.status_label.setText(tr("analyzing_time", t))
+        if self.total_duration and self.total_duration > 0:
+            pct = min(100, max(0, int(round((t / self.total_duration) * 100))))
+            self.progress_bar.setValue(pct)
+            use_hours = self.total_duration >= 3600
+            cur_str = format_short_time(min(t, self.total_duration), force_hours=use_hours)
+            tot_str = format_short_time(self.total_duration, force_hours=use_hours)
+            self.status_label.setText(
+                f"<span style='font-family: \"JetBrains Mono\", monospace;'>{pct} % • {cur_str} / {tot_str}</span>"
+            )
+        else:
+            self.status_label.setText(tr("analyzing_time", t))
 
     def on_analyze_done(self, result):
         if self.cancel_event.is_set() or result.get("Cancelled"):
             self.set_loading(False, tr("analysis_cancelled"))
             return
 
+        if self.total_duration and self.total_duration > 0:
+            self.progress_bar.setValue(100)
         self.set_loading(False, tr("analysis_done"))
         
         if result.get("I") is None:
@@ -527,56 +562,7 @@ def run_app():
             pass
 
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    
-    # Lade lokale Schriften (Plus Jakarta Sans & JetBrains Mono)
-    pjs_path = get_resource_path("assets/fonts/PlusJakartaSans-Variable.ttf")
-    jbm_path = get_resource_path("assets/fonts/JetBrainsMono-Variable.ttf")
-    if os.path.exists(pjs_path):
-        QFontDatabase.addApplicationFont(pjs_path)
-        if MATPLOTLIB_AVAILABLE:
-            try:
-                import matplotlib.font_manager as fm
-                fm.fontManager.addfont(pjs_path)
-            except Exception:
-                pass
-    if os.path.exists(jbm_path):
-        QFontDatabase.addApplicationFont(jbm_path)
-        if MATPLOTLIB_AVAILABLE:
-            try:
-                import matplotlib.font_manager as fm
-                fm.fontManager.addfont(jbm_path)
-            except Exception:
-                pass
-                
-    app_font = QFont("Plus Jakarta Sans", 10)
-    app_font.setStyleHint(QFont.SansSerif)
-    app.setFont(app_font)
-    
-    # Icon laden (Windows: icon.ico bevorzugt, Fallback PNG)
-    icon_rel = "assets/icon.ico" if sys.platform == "win32" and os.path.exists(get_resource_path("assets/icon.ico")) else "assets/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png"
-    icon_path = get_resource_path(icon_rel)
-    if os.path.exists(icon_path):
-        icon = QIcon(icon_path)
-        if not icon.isNull():
-            app.setWindowIcon(icon)
-    
-    palette = QPalette()
-    palette.setColor(QPalette.Window, QColor("#1C1C1E"))
-    palette.setColor(QPalette.WindowText, QColor("#F2F2F7"))
-    palette.setColor(QPalette.Base, QColor("#1C1C1E"))
-    palette.setColor(QPalette.AlternateBase, QColor("#2C2C2E"))
-    palette.setColor(QPalette.ToolTipBase, QColor("#3A3A3C"))
-    palette.setColor(QPalette.ToolTipText, QColor("#F2F2F7"))
-    palette.setColor(QPalette.Text, QColor("#F2F2F7"))
-    palette.setColor(QPalette.Button, QColor("#3A3A3C"))
-    palette.setColor(QPalette.ButtonText, QColor("#F2F2F7"))
-    palette.setColor(QPalette.BrightText, QColor("#FF453A"))
-    palette.setColor(QPalette.Link, QColor("#00FF8B"))
-    palette.setColor(QPalette.Highlight, QColor("#00FF8B"))
-    palette.setColor(QPalette.HighlightedText, QColor("#1C1C1E"))
-    palette.setColor(QPalette.PlaceholderText, QColor("#636366"))
-    app.setPalette(palette)
+    setup_app_theme(app)
     
     window = MainWindow()
     window.show()

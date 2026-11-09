@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from core.analyzer import parse_ebur128_summary, cluster_peak_events
-from core.scanner import get_standard_selection
+from core.scanner import get_standard_selection, extract_duration, format_short_time
 
 
 class TestScannerSelection(unittest.TestCase):
@@ -36,6 +36,18 @@ class TestScannerSelection(unittest.TestCase):
 
     def test_empty_streams(self):
         self.assertIsNone(get_standard_selection([]))
+
+    def test_extract_duration(self):
+        self.assertAlmostEqual(extract_duration([{"duration_sec": 235.0}]), 235.0)
+        self.assertAlmostEqual(extract_duration([{"duration": "120.5"}]), 120.5)
+        self.assertIsNone(extract_duration([{"channels": 2}]))
+        self.assertIsNone(extract_duration([]))
+
+    def test_format_short_time(self):
+        self.assertEqual(format_short_time(83.2), "01:23")
+        self.assertEqual(format_short_time(235.0), "03:55")
+        self.assertEqual(format_short_time(3661.0), "01:01:01")
+        self.assertEqual(format_short_time(83.0, force_hours=True), "00:01:23")
 
 
 class TestAnalyzerParsing(unittest.TestCase):
