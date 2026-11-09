@@ -164,7 +164,7 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         
         lang_layout = QHBoxLayout()
-        lang_label = QLabel(tr("language"))
+        self.lang_label = QLabel(tr("language"))
         self.lang_combo = QComboBox()
         self.lang_combo.addItem("Deutsch", "de")
         self.lang_combo.addItem("English", "en")
@@ -173,14 +173,14 @@ class SettingsDialog(QDialog):
         self.lang_combo.setCurrentIndex(idx)
         self.lang_combo.currentIndexChanged.connect(self.change_language)
         
-        lang_layout.addWidget(lang_label)
+        lang_layout.addWidget(self.lang_label)
         lang_layout.addWidget(self.lang_combo)
         layout.addLayout(lang_layout)
         
         layout.addStretch()
         
-        close_btn = QPushButton(tr("close"))
-        close_btn.setStyleSheet("""
+        self.close_btn = QPushButton(tr("close"))
+        self.close_btn.setStyleSheet("""
             QPushButton {
                 background-color: #3A3A3C;
                 color: #F2F2F7;
@@ -194,13 +194,15 @@ class SettingsDialog(QDialog):
                 border-color: #00FF8B;
             }
         """)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
+        self.close_btn.clicked.connect(self.accept)
+        layout.addWidget(self.close_btn)
 
     def change_language(self):
         new_lang = self.lang_combo.currentData()
-        set_current_lang(new_lang)
+        set_current_lang(new_lang, persist=True)
         self.setWindowTitle(tr("settings_title"))
+        self.lang_label.setText(tr("language"))
+        self.close_btn.setText(tr("close"))
         if self.parent_window:
             self.parent_window.update_texts()
 

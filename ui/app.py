@@ -14,7 +14,7 @@ from core.analyzer import analyze_loudness, format_timecode
 import importlib.util
 MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
 
-from ui.i18n import tr, VERSION
+from ui.i18n import tr, VERSION, init_language
 from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
 from ui.update_banner import UpdateBanner
 from ui.icon_helper import get_rune_icon
@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         init_fonts()
+        init_language()
         self.resize(600, 750)
         self.setMinimumSize(560, 680)
         self.setAcceptDrops(True)

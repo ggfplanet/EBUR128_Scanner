@@ -1,4 +1,4 @@
-VERSION = "1.5.3"
+VERSION = "1.5.4"
 
 TRANSLATIONS = {
     "de": {
@@ -68,8 +68,8 @@ TRANSLATIONS = {
         "plot_time": "Zeit (s)",
         "plot_lufs": "LUFS",
         "update_available_title": "Update verfügbar: v{} (Aktuell: v{})",
-        "update_btn": "⚡️ Jetzt aktualisieren",
-        "update_download_btn": "⚡️ Jetzt aktualisieren",
+        "update_btn": "Jetzt aktualisieren",
+        "update_download_btn": "Jetzt aktualisieren",
         "update_btn_tooltip_mac": "Öffnet die Konsole, aktualisiert die App und beendet dieses Fenster.",
         "update_btn_tooltip_win": "Öffnet die Webseite im Browser zum Herunterladen des Updates.",
         "update_running": "⏳ Update läuft... App schließt gleich automatisch.",
@@ -142,8 +142,8 @@ TRANSLATIONS = {
         "plot_time": "Time (s)",
         "plot_lufs": "LUFS",
         "update_available_title": "Update available: v{} (Current: v{})",
-        "update_btn": "⚡️ Update Now",
-        "update_download_btn": "⚡️ Update Now",
+        "update_btn": "Update Now",
+        "update_download_btn": "Update Now",
         "update_btn_tooltip_mac": "Opens Terminal, updates the app in-place, and closes this window.",
         "update_btn_tooltip_win": "Opens the website in your browser to download the update.",
         "update_running": "⏳ Updating... App will close automatically.",
@@ -151,18 +151,72 @@ TRANSLATIONS = {
     }
 }
 
+SETTINGS_ORG = "ggfplanet"
+SETTINGS_APP = "EBUR128Scanner"
 CURRENT_LANG = "de"
 
-def get_current_lang():
+
+def detect_system_language() -> str:
+    """Ermittelt die Systemsprache (Deutsch falls 'de', sonst standardmäßig Englisch)."""
+    try:
+        from PySide6.QtCore import QLocale
+        loc_name = QLocale.system().name().lower()
+        if loc_name.startswith("de"):
+            return "de"
+    except Exception:
+        pass
+
+    try:
+        import locale
+        loc = locale.getdefaultlocale()[0]
+        if loc and loc.lower().startswith("de"):
+            return "de"
+    except Exception:
+        pass
+
+    return "en"
+
+
+def init_language() -> str:
+    """Lädt die gespeicherte Sprache aus QSettings oder ermittelt sie anhand der Systemsprache."""
+    global CURRENT_LANG
+    try:
+        from PySide6.QtCore import QSettings
+        settings = QSettings(SETTINGS_ORG, SETTINGS_APP)
+        saved = settings.value("language")
+        if saved in TRANSLATIONS:
+            CURRENT_LANG = str(saved)
+            return CURRENT_LANG
+    except Exception:
+        pass
+
+    CURRENT_LANG = detect_system_language()
     return CURRENT_LANG
 
-def set_current_lang(lang):
+
+def get_current_lang() -> str:
+    return CURRENT_LANG
+
+
+def set_current_lang(lang: str, persist: bool = True):
     global CURRENT_LANG
     if lang in TRANSLATIONS:
         CURRENT_LANG = lang
+        if persist:
+            try:
+                from PySide6.QtCore import QSettings
+                settings = QSettings(SETTINGS_ORG, SETTINGS_APP)
+                settings.setValue("language", lang)
+            except Exception:
+                pass
 
-def tr(key, *args):
+
+def tr(key: str, *args) -> str:
     text = TRANSLATIONS.get(CURRENT_LANG, TRANSLATIONS["de"]).get(key, key)
     if args:
         return text.format(*args)
     return text
+
+
+# Initiale Erkennung beim Modulladen
+init_language()
