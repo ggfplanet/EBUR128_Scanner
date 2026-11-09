@@ -163,11 +163,6 @@ class MainWindow(QMainWindow):
         self.timecodes_textbox.setReadOnly(True)
         self.result_layout.addWidget(self.timecodes_textbox)
         
-        self.adv_btn = QPushButton()
-        self.adv_btn.setFlat(True)
-        self.adv_btn.clicked.connect(self.toggle_advanced)
-        self.result_layout.addWidget(self.adv_btn)
-        
         self.adv_widget = QWidget()
         self.adv_layout = QVBoxLayout(self.adv_widget)
         
@@ -179,8 +174,6 @@ class MainWindow(QMainWindow):
         for lbl in (self.i_label, self.lra_label, self.tp_label, self.file_label):
             lbl.setStyleSheet("font-size: 14px;")
             self.adv_layout.addWidget(lbl)
-            
-        self.adv_widget.hide()
         
         # Plot for loudness over time
         if MATPLOTLIB_AVAILABLE:
@@ -255,10 +248,6 @@ class MainWindow(QMainWindow):
         self.info_label.setText(tr("info_text"))
         self.select_btn.setText(tr("select_file"))
         self.cancel_btn.setText(tr("cancel"))
-        if self.adv_widget.isHidden():
-            self.adv_btn.setText(tr("adv_down"))
-        else:
-            self.adv_btn.setText(tr("adv_up"))
 
         if hasattr(self, 'update_banner'):
             self.update_banner.update_texts()
@@ -279,14 +268,6 @@ class MainWindow(QMainWindow):
     def show_settings(self):
         dlg = SettingsDialog(self)
         dlg.exec()
-
-    def toggle_advanced(self):
-        if self.adv_widget.isHidden():
-            self.adv_widget.show()
-            self.adv_btn.setText(tr("adv_up"))
-        else:
-            self.adv_widget.hide()
-            self.adv_btn.setText(tr("adv_down"))
 
     def open_file(self):
         filepath, _ = QFileDialog.getOpenFileName(self, tr("file_dialog"), "", tr("media_files"))
