@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                QLabel, QPushButton, QProgressBar, QTextEdit, QFileDialog, QMessageBox,
                                QDialog, QCheckBox, QScrollArea, QComboBox, QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Qt, Signal, QObject, QSize
-from PySide6.QtGui import QPalette, QColor, QFont, QIcon
+from PySide6.QtGui import QPalette, QColor, QFont, QIcon, QFontDatabase
 import os
 import subprocess
 
@@ -18,41 +18,9 @@ from ui.i18n import tr, VERSION
 from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
 from ui.update_banner import UpdateBanner
 from ui.icon_helper import get_rune_icon
+from ui.resources import get_resource_path, format_user_error, init_fonts
 from core.update_service import check_for_updates
 
-
-def format_user_error(e: Exception) -> str:
-    """Übersetzt technische Exceptions in nutzerfreundliche Fehlermeldungen."""
-    msg_str = str(e).lower()
-    if "4551" in msg_str or "anwendungssteuerungsrichtlinie" in msg_str or "application control" in msg_str:
-        return tr("error_app_control_blocked")
-    if isinstance(e, FileNotFoundError):
-        if "ffmpeg" in msg_str or "ffprobe" in msg_str:
-            return tr("error_ffmpeg_not_found")
-        return tr("error_file_read")
-    if isinstance(e, (subprocess.CalledProcessError, subprocess.SubprocessError, RuntimeError)):
-        return tr("error_file_read")
-    return tr("error_general", str(e))
-
-
-def get_resource_path(relative_path: str) -> str:
-    """Ermittelt den Pfad zu einer Ressource (funktioniert in Dev & gepacktem PyInstaller-Build)."""
-    candidates = []
-    if getattr(sys, "frozen", False):
-        if hasattr(sys, "_MEIPASS"):
-            candidates.append(os.path.join(sys._MEIPASS, relative_path))
-        exe_dir = os.path.dirname(sys.executable)
-        candidates.append(os.path.join(exe_dir, relative_path))
-        candidates.append(os.path.join(exe_dir, "_internal", relative_path))
-        candidates.append(os.path.normpath(os.path.join(exe_dir, "..", "Resources", relative_path)))
-    else:
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        candidates.append(os.path.join(project_root, relative_path))
-
-    for candidate in candidates:
-        if os.path.exists(candidate):
-            return candidate
-    return candidates[0] if candidates else relative_path
 
 class WorkerSignals(QObject):
     progress = Signal(float)
@@ -64,7 +32,9 @@ class WorkerSignals(QObject):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.resize(600, 650)
+        init_fonts()
+        self.resize(600, 750)
+        self.setMinimumSize(560, 680)
         if not QApplication.windowIcon().isNull():
             self.setWindowIcon(QApplication.windowIcon())
         
@@ -127,18 +97,25 @@ class MainWindow(QMainWindow):
         self.select_btn.setMinimumHeight(50)
         self.select_btn.setStyleSheet("""
             QPushButton {
-                background-color: #00FF8B;
-                color: #1C1C1E;
+                background-color: #2C2C2E;
+                color: #00FF8B;
                 font-size: 16px;
                 font-weight: bold;
-                border: none;
-                border-radius: 6px;
+                border: 1px solid #00FF8B;
+                border-radius: 8px;
             }
             QPushButton:hover {
-                background-color: #33FFAA;
+                background-color: #3A3A3C;
+                border-color: #33FFAA;
+                color: #33FFAA;
+            }
+            QPushButton:pressed {
+                background-color: #1C1C1E;
+                border-color: #00CC6A;
             }
             QPushButton:disabled {
-                background-color: #3A3A3C;
+                background-color: #242426;
+                border: 1px solid #3A3A3C;
                 color: #636366;
             }
         """)
@@ -204,6 +181,9 @@ class MainWindow(QMainWindow):
                 color: #F2F2F7;
                 border: 1px solid #48484A;
                 border-radius: 6px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 12px;
+                padding: 4px;
             }
         """)
         self.result_layout.addWidget(self.timecodes_textbox)
@@ -226,6 +206,8 @@ class MainWindow(QMainWindow):
             from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
             self.figure = Figure(figsize=(5, 3), facecolor='#282828')
             self.canvas = FigureCanvas(self.figure)
+            self.canvas.setMinimumHeight(200)
+            self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
             self.ax = self.figure.subplots()
             self._setup_plot_style()
             self.adv_layout.addWidget(self.canvas)
@@ -283,15 +265,17 @@ class MainWindow(QMainWindow):
     def _setup_plot_style(self):
         if not MATPLOTLIB_AVAILABLE: return
         self.ax.set_facecolor('#282828')
-        self.ax.tick_params(colors='white', labelsize=8)
-        self.ax.spines['bottom'].set_color('white')
-        self.ax.spines['top'].set_color('white')
-        self.ax.spines['left'].set_color('white')
-        self.ax.spines['right'].set_color('white')
-        self.ax.set_xlabel(tr("plot_time"), color='white', fontsize=9)
-        self.ax.set_ylabel(tr("plot_lufs"), color='white', fontsize=9)
+        self.ax.tick_params(colors='#AEAEB2', labelsize=8)
+        for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
+            label.set_fontfamily('JetBrains Mono')
+        self.ax.spines['bottom'].set_color('#48484A')
+        self.ax.spines['top'].set_color('#48484A')
+        self.ax.spines['left'].set_color('#48484A')
+        self.ax.spines['right'].set_color('#48484A')
+        self.ax.set_xlabel(tr("plot_time"), color='#AEAEB2', fontsize=9, fontfamily='Plus Jakarta Sans')
+        self.ax.set_ylabel(tr("plot_lufs"), color='#AEAEB2', fontsize=9, fontfamily='Plus Jakarta Sans')
         self.ax.set_ylim(-60, 3)
-        self.ax.grid(True, alpha=0.2, color='white')
+        self.ax.grid(True, alpha=0.2, color='#AEAEB2')
         self.figure.tight_layout()
 
     def update_texts(self):
@@ -439,14 +423,19 @@ class MainWindow(QMainWindow):
     def _display_result(self, result):
         gain = result["Gain"]
         sign = "+" if gain >= 0 else ""
-        self.gain_label.setText(tr("gain_adjustment", sign, gain))
         
         # Rot wenn größer als 1dB + oder - (> 1.0 oder < -1.0), Grün wenn im Bereich [-1.0, 1.0]
         if round(abs(gain), 1) > 1.0:
             gain_color = "#FF453A"  # Rot
         else:
             gain_color = "#30D158"  # Grün
-        self.gain_label.setStyleSheet(f"font-size: 28px; font-weight: bold; color: {gain_color};")
+            
+        gain_prefix = tr("gain_adjustment", "", "").split(":")[0] + ":"
+        self.gain_label.setText(
+            f"<span style='color: #F2F2F7;'>{gain_prefix} </span>"
+            f"<span style='color: {gain_color}; font-family: \"JetBrains Mono\", monospace;'>{sign}{gain:.1f} dB</span>"
+        )
+        self.gain_label.setStyleSheet("font-size: 28px; font-weight: bold;")
         
         events = result.get("Peak_Events", [])
         if events:
@@ -470,6 +459,8 @@ class MainWindow(QMainWindow):
             
             self.timecodes_textbox.show()
             self.timecodes_textbox.setText("\n".join(lines))
+            if self.height() < 750:
+                self.resize(self.width(), 750)
         else:
             self.alert_label.hide()
             self.timecodes_textbox.hide()
@@ -477,11 +468,17 @@ class MainWindow(QMainWindow):
         i_val = "N/A" if result["I"] is None else result["I"]
         lra_val = "N/A" if result["LRA"] is None else result["LRA"]
         tp_val = "N/A" if result["Peak"] is None else result["Peak"]
-        self.i_label.setText(tr("i_label", i_val))
-        self.lra_label.setText(tr("lra_label", lra_val))
-        self.tp_label.setText(tr("tp_label", tp_val))
+        
+        i_str = f"{i_val} LUFS" if i_val != "N/A" else "N/A"
+        lra_str = f"{lra_val} LU" if lra_val != "N/A" else "N/A"
+        tp_str = f"{tp_val} dBTP" if tp_val != "N/A" else "N/A"
+        
+        self.i_label.setText(f"Integrated (I): <span style='font-family: \"JetBrains Mono\", monospace; font-weight: 600; color: #F2F2F7;'>{i_str}</span>")
+        self.lra_label.setText(f"Loudness Range (LRA): <span style='font-family: \"JetBrains Mono\", monospace; font-weight: 600; color: #F2F2F7;'>{lra_str}</span>")
+        self.tp_label.setText(f"True Peak (Max): <span style='font-family: \"JetBrains Mono\", monospace; font-weight: 600; color: #F2F2F7;'>{tp_str}</span>")
         filename = os.path.basename(self.current_file) if self.current_file else "N/A"
-        self.file_label.setText(tr("file_label", filename))
+        file_prefix = tr("file_label", "").split(":")[0] + ":"
+        self.file_label.setText(f"{file_prefix} <span style='font-family: \"JetBrains Mono\", monospace; color: #AEAEB2;'>{filename}</span>")
 
         # Update Plot
         if MATPLOTLIB_AVAILABLE:
@@ -506,7 +503,17 @@ class MainWindow(QMainWindow):
                 # EBU +18 scale: -60 LUFS to +3 LUFS headroom
                 self.ax.set_ylim(-60, 3)
                 
-                self.ax.legend(loc="lower right", fontsize=8, facecolor="#282828", edgecolor="white", labelcolor="white")
+                for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
+                    label.set_fontfamily('JetBrains Mono')
+                
+                self.ax.legend(
+                    loc="lower right", 
+                    fontsize=8, 
+                    facecolor="#282828", 
+                    edgecolor="#48484A", 
+                    labelcolor="#F2F2F7",
+                    prop={'family': 'Plus Jakarta Sans', 'size': 8}
+                )
                 
                 self.figure.tight_layout()
                 self.canvas.draw()
@@ -521,6 +528,30 @@ def run_app():
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    
+    # Lade lokale Schriften (Plus Jakarta Sans & JetBrains Mono)
+    pjs_path = get_resource_path("assets/fonts/PlusJakartaSans-Variable.ttf")
+    jbm_path = get_resource_path("assets/fonts/JetBrainsMono-Variable.ttf")
+    if os.path.exists(pjs_path):
+        QFontDatabase.addApplicationFont(pjs_path)
+        if MATPLOTLIB_AVAILABLE:
+            try:
+                import matplotlib.font_manager as fm
+                fm.fontManager.addfont(pjs_path)
+            except Exception:
+                pass
+    if os.path.exists(jbm_path):
+        QFontDatabase.addApplicationFont(jbm_path)
+        if MATPLOTLIB_AVAILABLE:
+            try:
+                import matplotlib.font_manager as fm
+                fm.fontManager.addfont(jbm_path)
+            except Exception:
+                pass
+                
+    app_font = QFont("Plus Jakarta Sans", 10)
+    app_font.setStyleHint(QFont.SansSerif)
+    app.setFont(app_font)
     
     # Icon laden (Windows: icon.ico bevorzugt, Fallback PNG)
     icon_rel = "assets/icon.ico" if sys.platform == "win32" and os.path.exists(get_resource_path("assets/icon.ico")) else "assets/EBUR128_scanner_icon-macOS-Default-1024x1024@1x.png"

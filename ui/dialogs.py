@@ -90,15 +90,22 @@ class StreamSelectionDialog(QDialog):
         self.btn.setMinimumHeight(40)
         self.btn.setStyleSheet("""
             QPushButton {
-                background-color: #00FF8B;
-                color: #1C1C1E;
+                background-color: #2C2C2E;
+                color: #00FF8B;
                 font-size: 14px;
                 font-weight: bold;
-                border: none;
+                border: 1px solid #00FF8B;
                 border-radius: 6px;
+                padding: 6px 14px;
             }
             QPushButton:hover {
-                background-color: #33FFAA;
+                background-color: #3A3A3C;
+                border-color: #33FFAA;
+                color: #33FFAA;
+            }
+            QPushButton:pressed {
+                background-color: #1C1C1E;
+                border-color: #00CC6A;
             }
         """)
         layout.addWidget(self.btn)
@@ -235,12 +242,12 @@ class InfoDialog(QDialog):
         c_layout.addWidget(c_head)
         
         c_body = QLabel(
-            f"<table cellpadding='2' style='font-size: 12px; line-height: 1.5;'>"
-            f"<tr><td style='color: #AEAEB2; width: 85px;'>{tr('info_version')}:</td><td><b style='color: #00FF8B;'>v{VERSION}</b></td></tr>"
+            f"<table cellpadding='3' style='font-size: 12px; line-height: 1.5; font-family: \"Plus Jakarta Sans\", sans-serif;'>"
+            f"<tr><td style='color: #AEAEB2; width: 90px;'>{tr('info_version')}:</td><td><span style='color: #00FF8B; font-weight: bold; font-family: \"JetBrains Mono\", monospace;'>v{VERSION}</span></td></tr>"
             f"<tr><td style='color: #AEAEB2;'>{tr('info_developer')}:</td><td style='color: #F2F2F7; font-weight: 500;'>Tim Butenschön</td></tr>"
-            f"<tr><td style='color: #AEAEB2;'>{tr('info_email')}:</td><td><a href='mailto:webseite@timbutenschoen.de' style='color: #00FF8B; text-decoration: none;'>webseite@timbutenschoen.de</a></td></tr>"
-            f"<tr><td style='color: #AEAEB2;'>{tr('info_website')}:</td><td><a href='https://ggfplanet.de/ebur128scanner' style='color: #00FF8B; text-decoration: none;'>ggfplanet.de/ebur128scanner</a></td></tr>"
-            f"<tr><td style='color: #AEAEB2;'>GitHub:</td><td><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #00FF8B; text-decoration: none;'>github.com/ggfplanet/EBUR128_Scanner</a></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>{tr('info_email')}:</td><td><a href='mailto:webseite@timbutenschoen.de' style='color: #00FF8B; text-decoration: none; font-family: \"JetBrains Mono\", monospace;'>webseite@timbutenschoen.de</a></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>{tr('info_website')}:</td><td><a href='https://ggfplanet.de/ebur128scanner' style='color: #00FF8B; text-decoration: none; font-family: \"JetBrains Mono\", monospace;'>ggfplanet.de/ebur128scanner</a></td></tr>"
+            f"<tr><td style='color: #AEAEB2;'>GitHub:</td><td><a href='https://github.com/ggfplanet/EBUR128_Scanner' style='color: #00FF8B; text-decoration: none; font-family: \"JetBrains Mono\", monospace;'>github.com/ggfplanet/EBUR128_Scanner</a></td></tr>"
             f"</table>"
         )
         c_body.setWordWrap(True)

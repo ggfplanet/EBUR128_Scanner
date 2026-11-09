@@ -29,9 +29,9 @@ class TestUIPaletteAndGain(unittest.TestCase):
                 "Peak_Exceedances": [],
             }
             self.window._display_result(result)
-            stylesheet = self.window.gain_label.styleSheet()
-            self.assertIn("#30D158", stylesheet, f"Gain {gain} dB should be green (#30D158)")
-            self.assertNotIn("#FF453A", stylesheet, f"Gain {gain} dB should not be red")
+            text = self.window.gain_label.text()
+            self.assertIn("#30D158", text, f"Gain {gain} dB should be green (#30D158)")
+            self.assertNotIn("#FF453A", text, f"Gain {gain} dB should not be red")
 
     def test_gain_color_greater_than_one_db(self):
         # Außerhalb des ±1.0 dB Bereichs -> Rot (#FF453A)
@@ -47,15 +47,21 @@ class TestUIPaletteAndGain(unittest.TestCase):
                 "Peak_Exceedances": [],
             }
             self.window._display_result(result)
-            stylesheet = self.window.gain_label.styleSheet()
-            self.assertIn("#FF453A", stylesheet, f"Gain {gain} dB should be red (#FF453A)")
-            self.assertNotIn("#30D158", stylesheet, f"Gain {gain} dB should not be green")
+            text = self.window.gain_label.text()
+            self.assertIn("#FF453A", text, f"Gain {gain} dB should be red (#FF453A)")
+            self.assertNotIn("#30D158", text, f"Gain {gain} dB should not be green")
 
     def test_format_user_error_winerror_4551(self):
         from ui.app import format_user_error
         err = OSError(4551, "Eine Anwendungssteuerungsrichtlinie hat diese Datei blockiert")
         msg = format_user_error(err)
         self.assertIn("Smart App Control", msg)
+
+    def test_fonts_registered(self):
+        from PySide6.QtGui import QFontDatabase
+        families = QFontDatabase.families()
+        self.assertIn("Plus Jakarta Sans", families)
+        self.assertIn("JetBrains Mono", families)
 
 
 if __name__ == "__main__":
