@@ -3,7 +3,7 @@ VERSION = "1.5.4"
 TRANSLATIONS = {
     "de": {
         "app_title": "EBU R 128 Scanner",
-        "header": "Lautheitsanalyse (EBU R 128)",
+        "header": "Lautheitsanalyse EBU R 128",
         "info_text": "Wähle eine Audio- oder Videodatei aus, um die Lautheit zu messen.",
         "select_file": "Datei Auswählen",
         "reading_structure": "Dateistruktur wird gelesen...",
@@ -77,7 +77,7 @@ TRANSLATIONS = {
     },
     "en": {
         "app_title": "EBU R 128 Scanner",
-        "header": "Loudness Analysis (EBU R 128)",
+        "header": "Loudness Analysis EBU R 128",
         "info_text": "Select an audio or video file to measure loudness.",
         "select_file": "Select File",
         "reading_structure": "Reading file structure...",

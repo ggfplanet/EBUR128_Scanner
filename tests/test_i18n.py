@@ -49,3 +49,4 @@ class TestI18n(unittest.TestCase):
         loaded = init_language()
         self.assertEqual(loaded, "de")
         self.assertEqual(get_current_lang(), "de")
+
