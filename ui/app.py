@@ -24,6 +24,8 @@ from core.update_service import check_for_updates
 def format_user_error(e: Exception) -> str:
     """Übersetzt technische Exceptions in nutzerfreundliche Fehlermeldungen."""
     msg_str = str(e).lower()
+    if "4551" in msg_str or "anwendungssteuerungsrichtlinie" in msg_str or "application control" in msg_str:
+        return tr("error_app_control_blocked")
     if isinstance(e, FileNotFoundError):
         if "ffmpeg" in msg_str or "ffprobe" in msg_str:
             return tr("error_ffmpeg_not_found")

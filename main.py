@@ -25,6 +25,13 @@ def main_with_crash_handler():
             proj_dir = os.path.dirname(os.path.abspath(__file__))
             os.environ["PATH"] = proj_dir + os.pathsep + os.environ.get("PATH", "")
 
+        # Windows Smart App Control / Zone.Identifier Mark of the Web automatisch entfernen
+        try:
+            from core.binary_helper import unblock_bundled_binaries
+            unblock_bundled_binaries()
+        except Exception:
+            pass
+
         from ui.app import run_app
         run_app()
 

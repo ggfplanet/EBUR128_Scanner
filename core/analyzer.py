@@ -3,6 +3,7 @@ import subprocess
 import re
 import threading
 from typing import TypedDict, Callable, Any, Iterable
+from core.binary_helper import get_binary_path
 
 
 class PeakEvent(TypedDict):
@@ -130,8 +131,9 @@ def analyze_loudness(
     else:
         filter_complex = f"[0:a:{stream_indices[0]}]ebur128=peak=true"
 
+    ffmpeg_bin = get_binary_path("ffmpeg")
     cmd = [
-        "ffmpeg",
+        ffmpeg_bin,
         "-nostats",
         *inputs,
         "-filter_complex", filter_complex,

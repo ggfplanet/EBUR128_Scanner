@@ -2,15 +2,16 @@ from __future__ import annotations
 import subprocess
 import json
 from typing import Any
+from core.binary_helper import get_binary_path
 
 
 def get_audio_streams(file_path: str) -> list[dict[str, Any]]:
     """
     Ruft ffprobe auf und gibt eine Liste aller im File vorhandenen Audiostreams zurück.
     """
-    # FFmpeg/ffprobe ist via main.py im PATH
+    ffprobe_bin = get_binary_path("ffprobe")
     cmd = [
-        "ffprobe",
+        ffprobe_bin,
         "-v", "quiet",
         "-print_format", "json",
         "-show_streams",

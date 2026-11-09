@@ -51,6 +51,12 @@ class TestUIPaletteAndGain(unittest.TestCase):
             self.assertIn("#FF453A", stylesheet, f"Gain {gain} dB should be red (#FF453A)")
             self.assertNotIn("#30D158", stylesheet, f"Gain {gain} dB should not be green")
 
+    def test_format_user_error_winerror_4551(self):
+        from ui.app import format_user_error
+        err = OSError(4551, "Eine Anwendungssteuerungsrichtlinie hat diese Datei blockiert")
+        msg = format_user_error(err)
+        self.assertIn("Smart App Control", msg)
+
 
 if __name__ == "__main__":
     unittest.main()
