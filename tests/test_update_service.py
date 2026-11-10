@@ -12,6 +12,7 @@ from core.update_service import (
     check_for_updates,
     DEFAULT_MAC_INSTALL_CMD,
     DEFAULT_WIN_INSTALL_CMD,
+    DEFAULT_LINUX_INSTALL_CMD,
 )
 
 
@@ -39,6 +40,7 @@ class TestUpdateService(unittest.TestCase):
         self.assertEqual(res["current_version"], "1.5.0")
         self.assertEqual(res["mac_install_cmd"], DEFAULT_MAC_INSTALL_CMD)
         self.assertEqual(res["win_install_cmd"], DEFAULT_WIN_INSTALL_CMD)
+        self.assertEqual(res["linux_install_cmd"], DEFAULT_LINUX_INSTALL_CMD)
 
 
 if __name__ == "__main__":

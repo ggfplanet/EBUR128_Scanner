@@ -13,12 +13,14 @@ import tempfile
 import urllib.request
 import urllib.error
 import webbrowser
+import shutil
 from pathlib import Path
 
 UPDATE_URL = "https://ggfplanet.de/ebur128scanner/version.json"
 DEFAULT_DOWNLOAD_URL = "https://ggfplanet.de/ebur128scanner/"
 DEFAULT_MAC_INSTALL_CMD = "curl -fsSL https://ggfplanet.de/ebur128scanner/install.sh | bash"
 DEFAULT_WIN_INSTALL_CMD = "irm https://ggfplanet.de/ebur128scanner/install.ps1 | iex"
+DEFAULT_LINUX_INSTALL_CMD = "curl -fsSL https://ggfplanet.de/ebur128scanner/install-linux.sh | bash"
 TIMEOUT_SECONDS = 5
 
 
@@ -65,6 +67,7 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
         "download_url": DEFAULT_DOWNLOAD_URL,
         "mac_install_cmd": DEFAULT_MAC_INSTALL_CMD,
         "win_install_cmd": DEFAULT_WIN_INSTALL_CMD,
+        "linux_install_cmd": DEFAULT_LINUX_INSTALL_CMD,
         "release_notes": None,
         "published_at": None,
         # CamelCase aliases
@@ -74,6 +77,7 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
         "downloadUrl": DEFAULT_DOWNLOAD_URL,
         "macInstallCmd": DEFAULT_MAC_INSTALL_CMD,
         "winInstallCmd": DEFAULT_WIN_INSTALL_CMD,
+        "linuxInstallCmd": DEFAULT_LINUX_INSTALL_CMD,
         "releaseNotes": None,
         "publishedAt": None,
         "error": None,
@@ -101,6 +105,7 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
             download_url = str(payload.get("downloadUrl", DEFAULT_DOWNLOAD_URL))
             mac_install_cmd = payload.get("macInstallCmd") or DEFAULT_MAC_INSTALL_CMD
             win_install_cmd = payload.get("winInstallCmd") or DEFAULT_WIN_INSTALL_CMD
+            linux_install_cmd = payload.get("linuxInstallCmd") or DEFAULT_LINUX_INSTALL_CMD
             release_notes = payload.get("releaseNotes")
             published_at = payload.get("publishedAt")
 
@@ -113,6 +118,7 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
                 "download_url": download_url,
                 "mac_install_cmd": mac_install_cmd,
                 "win_install_cmd": win_install_cmd,
+                "linux_install_cmd": linux_install_cmd,
                 "release_notes": release_notes,
                 "published_at": published_at,
                 # CamelCase aliases for backwards-compatibility
@@ -122,6 +128,7 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
                 "downloadUrl": download_url,
                 "macInstallCmd": mac_install_cmd,
                 "winInstallCmd": win_install_cmd,
+                "linuxInstallCmd": linux_install_cmd,
                 "releaseNotes": release_notes,
                 "publishedAt": published_at,
                 "error": None,
@@ -171,6 +178,24 @@ rm -f "{script_path}"
         except Exception:
             webbrowser.open(download_url)
             return False
+    elif system == "linux":
+        install_cmd = cmd or DEFAULT_LINUX_INSTALL_CMD
+        terminal_candidates = ["x-terminal-emulator", "gnome-terminal", "konsole", "xfce4-terminal", "alacritty", "kitty", "xterm"]
+        for term in terminal_candidates:
+            if shutil.which(term):
+                try:
+                    term_cmd = f"{install_cmd}; echo ''; printf '%s' 'Druecke Enter zum Schliessen... '; read -r dummy"
+                    if term in ("gnome-terminal", "xfce4-terminal"):
+                        subprocess.Popen([term, "--", "bash", "-c", term_cmd])
+                    elif term == "konsole":
+                        subprocess.Popen([term, "-e", "bash", "-c", term_cmd])
+                    else:
+                        subprocess.Popen([term, "-e", f"bash -c \"{term_cmd}\""])
+                    return True
+                except Exception:
+                    pass
+        webbrowser.open(download_url)
+        return True
     else:
         # Windows / andere Systeme: Offizielle Landingpage im Browser öffnen
         webbrowser.open(download_url)

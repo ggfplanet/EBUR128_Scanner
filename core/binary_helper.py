@@ -84,12 +84,22 @@ def get_binary_path(name: str) -> str:
     for path in candidates:
         if os.path.isfile(path):
             unblock_file(path)
+            if sys.platform != "win32" and not os.access(path, os.X_OK):
+                try:
+                    os.chmod(path, 0o755)
+                except Exception:
+                    pass
             return path
             
     # Fallback: Im System-PATH suchen
     system_path = shutil.which(binary_name) or shutil.which(name)
     if system_path:
         unblock_file(system_path)
+        if sys.platform != "win32" and not os.access(system_path, os.X_OK):
+            try:
+                os.chmod(system_path, 0o755)
+            except Exception:
+                pass
         return system_path
         
     return binary_name

@@ -28,6 +28,7 @@ class UpdateBanner(QWidget):
         self.update_info = None
         self.download_url = DEFAULT_DOWNLOAD_URL
         self.mac_install_cmd = DEFAULT_MAC_INSTALL_CMD
+        self.linux_install_cmd = None
         self.is_updating = False
         self.hide()  # Standardmäßig unsichtbar
 
@@ -130,6 +131,7 @@ class UpdateBanner(QWidget):
 
         self.download_url = info.get("download_url") or info.get("downloadUrl") or self.download_url
         self.mac_install_cmd = info.get("mac_install_cmd") or info.get("macInstallCmd") or self.mac_install_cmd
+        self.linux_install_cmd = info.get("linux_install_cmd") or info.get("linuxInstallCmd") or self.linux_install_cmd
         self.update_texts()
         self.show()
 
@@ -176,6 +178,8 @@ class UpdateBanner(QWidget):
             self.updating_label.setText(tr("update_running"))
             self.updating_label.show()
             execute_terminal_update(self.mac_install_cmd, self.download_url)
+        elif sys.platform.startswith("linux"):
+            execute_terminal_update(self.linux_install_cmd, self.download_url)
         else:
             if self.download_url:
                 QDesktopServices.openUrl(QUrl(self.download_url))
