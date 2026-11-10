@@ -69,3 +69,4 @@ def download_and_extract(force: bool = False, target_arch: str | None = None):
 if __name__ == "__main__":
     force_download = "--force" in sys.argv
     download_and_extract(force=force_download)
+
