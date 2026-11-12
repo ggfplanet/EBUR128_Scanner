@@ -130,6 +130,12 @@ def setup_app_theme(app):
     app_font.setStyleHint(QFont.SansSerif)
     app.setFont(app_font)
 
+    if sys.platform.startswith("linux"):
+        try:
+            app.setDesktopFileName("ebur128scanner")
+        except Exception:
+            pass
+
     icon_rel = (
         "assets/icon.ico"
         if sys.platform == "win32" and os.path.exists(get_resource_path("assets/icon.ico"))
