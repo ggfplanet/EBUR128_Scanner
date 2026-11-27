@@ -6,7 +6,7 @@ und ermöglicht ein 1-Klick Terminal In-Place Update (macOS) bzw. Browser-Weiter
 
 import sys
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
+    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QMessageBox
 )
 from PySide6.QtCore import QUrl, QSize
 from PySide6.QtGui import QDesktopServices
@@ -14,6 +14,7 @@ from ui.i18n import tr
 from ui.icon_helper import get_rune_icon
 from core.update_service import (
     execute_terminal_update,
+    sanitize_download_url,
     DEFAULT_DOWNLOAD_URL,
     DEFAULT_MAC_INSTALL_CMD,
 )
@@ -159,27 +160,40 @@ class UpdateBanner(QWidget):
         self.updating_label.setText(tr("update_running"))
         self.download_btn.setText(tr("update_btn"))
 
-        if sys.platform == "darwin":
+        if sys.platform == "darwin" or sys.platform.startswith("linux"):
             self.download_btn.setToolTip(tr("update_btn_tooltip_mac"))
         else:
             self.download_btn.setToolTip(tr("update_btn_tooltip_win"))
 
         self.dismiss_btn.setToolTip(tr("update_dismiss"))
 
+    def _handle_blocked_update(self):
+        self.is_updating = False
+        self.updating_label.hide()
+        self.download_btn.show()
+        QMessageBox.warning(
+            self,
+            tr("update_blocked_title"),
+            tr("update_blocked_msg", DEFAULT_DOWNLOAD_URL),
+        )
+        QDesktopServices.openUrl(QUrl(DEFAULT_DOWNLOAD_URL))
+
     def _on_update_clicked(self):
         """
         Plattform-differenzierte Aktion gemäß tim-update:
-        - macOS: Startet das Terminal-Update entkoppelt und zeigt Ladehinweis im Banner.
-        - Windows: Öffnet die Download-URL im Standardbrowser.
+        - macOS & Linux: Startet das Terminal-Update entkoppelt (mit Sicherheitsprüfung).
+        - Windows: Öffnet die offizielle Download-URL auf ggfplanet.de im Standardbrowser.
         """
+        safe_url = sanitize_download_url(self.download_url)
         if sys.platform == "darwin":
             self.is_updating = True
             self.download_btn.hide()
             self.updating_label.setText(tr("update_running"))
             self.updating_label.show()
-            execute_terminal_update(self.mac_install_cmd, self.download_url)
+            if not execute_terminal_update(self.mac_install_cmd, safe_url):
+                self._handle_blocked_update()
         elif sys.platform.startswith("linux"):
-            execute_terminal_update(self.linux_install_cmd, self.download_url)
+            if not execute_terminal_update(self.linux_install_cmd, safe_url):
+                self._handle_blocked_update()
         else:
-            if self.download_url:
-                QDesktopServices.openUrl(QUrl(self.download_url))
+            QDesktopServices.openUrl(QUrl(safe_url))

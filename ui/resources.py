@@ -118,6 +118,93 @@ PROGRESS_BAR_STYLE = """
     }
 """
 
+CANCEL_BTN_STYLE = """
+    QPushButton {
+        background-color: #3A3A3C;
+        color: #F2F2F7;
+        font-size: 13px;
+        font-weight: bold;
+        border: 1px solid #48484A;
+        border-radius: 4px;
+        padding: 4px 14px;
+    }
+    QPushButton:hover {
+        background-color: #48484A;
+        border-color: #FF453A;
+        color: #F2F2F7;
+    }
+"""
+
+DEV_INFO_BTN_STYLE = """
+    QPushButton {
+        background: transparent;
+        border: 1px solid #48484A;
+        border-radius: 6px;
+        padding: 4px 10px;
+        color: #AEAEB2;
+        font-size: 11px;
+    }
+    QPushButton:hover {
+        background-color: #3A3A3C;
+        border-color: #00FF8B;
+        color: #F2F2F7;
+    }
+"""
+
+REPORT_BTN_PRIMARY_STYLE = """
+    QPushButton {
+        background-color: #2C2C2E;
+        color: #00FF8B;
+        font-size: 13px;
+        font-weight: bold;
+        border: 1px solid #00FF8B;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+    QPushButton:hover {
+        background-color: #3A3A3C;
+        border-color: #33FFAA;
+        color: #33FFAA;
+    }
+    QPushButton:pressed {
+        background-color: #1C1C1E;
+        border-color: #00CC6A;
+    }
+"""
+
+REPORT_BTN_SECONDARY_STYLE = """
+    QPushButton {
+        background-color: #2C2C2E;
+        color: #F2F2F7;
+        font-size: 13px;
+        font-weight: bold;
+        border: 1px solid #48484A;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+    QPushButton:hover {
+        background-color: #3A3A3C;
+        border-color: #00FF8B;
+        color: #F2F2F7;
+    }
+    QPushButton:pressed {
+        background-color: #1C1C1E;
+        border-color: #00CC6A;
+    }
+"""
+
+REPORT_BTN_SUCCESS_STYLE = """
+    QPushButton {
+        background-color: #1F3A2B;
+        color: #30D158;
+        font-size: 13px;
+        font-weight: bold;
+        border: 1px solid #30D158;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+"""
+
 
 def setup_app_theme(app):
     """Konfiguriert Schriften, App-Icon und das dunkle Farbschema für die QApplication."""

@@ -1,5 +1,3 @@
-import os
-import sys
 import unittest
 
 from core.binary_helper import get_binary_path, unblock_file, unblock_bundled_binaries

@@ -10,7 +10,7 @@ class TestIconHelper(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication(sys.argv)
 
     def test_rune_icons_exist_and_render(self):
-        for name in ["settings", "info", "close", "zap"]:
+        for name in ["settings", "info", "close", "zap", "file-text", "copy", "check"]:
             path = get_icon_path(name)
             self.assertTrue(path.is_file(), f"Icon file missing: {path}")
             icon = get_rune_icon(name)

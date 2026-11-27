@@ -8,6 +8,7 @@ und unterstützt das 1-Klick Terminal In-Place Update auf macOS sowie Web-Redire
 
 import json
 import platform
+import re
 import subprocess
 import tempfile
 import urllib.request
@@ -22,6 +23,30 @@ DEFAULT_MAC_INSTALL_CMD = "curl -fsSL https://ggfplanet.de/ebur128scanner/instal
 DEFAULT_WIN_INSTALL_CMD = "irm https://ggfplanet.de/ebur128scanner/install.ps1 | iex"
 DEFAULT_LINUX_INSTALL_CMD = "curl -fsSL https://ggfplanet.de/ebur128scanner/install-linux.sh | bash"
 TIMEOUT_SECONDS = 5
+
+_TRUSTED_INSTALL_RE = re.compile(
+    r"^(curl|wget)\s+[-\w\s]+https://ggfplanet\.de/[\w./-]+\s*\|\s*(bash|sh)$"
+)
+
+
+def is_trusted_install_cmd(cmd: str | None) -> bool:
+    """
+    Prüft flexibel, ob ein Installationsbefehl ausschließlich Skripte von https://ggfplanet.de/
+    über curl/wget an bash/sh weitergibt (ohne Shell-Verkettung, Subshells oder Zeilenumbrüche).
+    """
+    if not isinstance(cmd, str):
+        return False
+    stripped = cmd.strip()
+    if not stripped or any(tok in stripped for tok in ("\n", "\r", ";", "&&", "||", "`", "$(")):
+        return False
+    return bool(_TRUSTED_INSTALL_RE.fullmatch(stripped))
+
+
+def sanitize_download_url(url: str | None) -> str:
+    """Stellt sicher, dass nur offizielle HTTPS-URLs unter ggfplanet.de geöffnet werden."""
+    if isinstance(url, str) and url.strip().startswith("https://ggfplanet.de/"):
+        return url.strip()
+    return DEFAULT_DOWNLOAD_URL
 
 
 def is_newer_version(remote_version: str, current_version: str) -> bool:
@@ -141,12 +166,16 @@ def check_for_updates(current_version: str, update_url: str = UPDATE_URL, timeou
 def execute_terminal_update(cmd: str | None = None, download_url: str = DEFAULT_DOWNLOAD_URL) -> bool:
     """
     Führt das Update gemäß tim-update Skill aus:
-    - macOS: Erstellt ein entkoppeltes .command-Skript mit Exit-Code-Prüfung und startet Terminal.app.
+    - macOS/Linux: Validiert den Befehl auf ggfplanet.de und startet das Terminal-Update.
+      Gibt False zurück, wenn der Befehl blockiert wurde oder das Terminal nicht startete.
     - Windows: Öffnet die offizielle Download-Webseite im Standardbrowser (um Datei-Locks & Defender-Blockaden zu vermeiden).
     """
+    safe_url = sanitize_download_url(download_url)
     system = platform.system().lower()
     if system == "darwin":
-        install_cmd = cmd or DEFAULT_MAC_INSTALL_CMD
+        install_cmd = (cmd or DEFAULT_MAC_INSTALL_CMD).strip()
+        if not is_trusted_install_cmd(install_cmd):
+            return False
         script_path = Path(tempfile.gettempdir()) / "ebur128scanner_update.command"
         script_content = f"""#!/bin/bash
 clear
@@ -176,10 +205,12 @@ rm -f "{script_path}"
             subprocess.Popen(["/usr/bin/open", "-a", "Terminal", str(script_path)])
             return True
         except Exception:
-            webbrowser.open(download_url)
+            webbrowser.open(safe_url)
             return False
     elif system == "linux":
-        install_cmd = cmd or DEFAULT_LINUX_INSTALL_CMD
+        install_cmd = (cmd or DEFAULT_LINUX_INSTALL_CMD).strip()
+        if not is_trusted_install_cmd(install_cmd):
+            return False
         terminal_candidates = ["x-terminal-emulator", "gnome-terminal", "konsole", "xfce4-terminal", "alacritty", "kitty", "xterm"]
         for term in terminal_candidates:
             if shutil.which(term):
@@ -187,16 +218,14 @@ rm -f "{script_path}"
                     term_cmd = f"{install_cmd}; echo ''; printf '%s' 'Druecke Enter zum Schliessen... '; read -r dummy"
                     if term in ("gnome-terminal", "xfce4-terminal"):
                         subprocess.Popen([term, "--", "bash", "-c", term_cmd])
-                    elif term == "konsole":
-                        subprocess.Popen([term, "-e", "bash", "-c", term_cmd])
                     else:
-                        subprocess.Popen([term, "-e", f"bash -c \"{term_cmd}\""])
+                        subprocess.Popen([term, "-e", "bash", "-c", term_cmd])
                     return True
                 except Exception:
                     pass
-        webbrowser.open(download_url)
+        webbrowser.open(safe_url)
         return True
     else:
         # Windows / andere Systeme: Offizielle Landingpage im Browser öffnen
-        webbrowser.open(download_url)
+        webbrowser.open(safe_url)
         return True

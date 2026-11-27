@@ -5,7 +5,7 @@ Unterstützt Retina/HiDPI Skalierung und automatische Farbwechsel für Hover/Act
 
 from pathlib import Path
 import sys
-from PySide6.QtCore import QByteArray, QSize
+from PySide6.QtCore import QByteArray
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor
 from PySide6.QtSvg import QSvgRenderer
 

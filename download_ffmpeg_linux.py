@@ -37,7 +37,7 @@ def download_and_extract(force: bool = False, target_arch: str | None = None):
     print(f"Downloading static Linux ({arch}) FFmpeg from {url}...")
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             data = resp.read()
 
         with tarfile.open(fileobj=io.BytesIO(data), mode="r:xz") as tar:

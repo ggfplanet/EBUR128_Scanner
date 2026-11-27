@@ -2,7 +2,7 @@ from __future__ import annotations
 import subprocess
 import re
 import threading
-from typing import TypedDict, Callable, Any, Iterable
+from typing import TypedDict, Callable, Iterable
 from core.binary_helper import get_binary_path
 
 
@@ -149,6 +149,8 @@ def analyze_loudness(
         cmd,
         stderr=subprocess.PIPE,
         universal_newlines=True,
+        encoding="utf-8",
+        errors="replace",
         bufsize=1,
         creationflags=creation_flags
     )

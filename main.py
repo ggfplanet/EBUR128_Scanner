@@ -39,10 +39,10 @@ def main_with_crash_handler():
         # Write crash log to Desktop or Temp so the user can find it
         crash_log_path = os.path.join(os.path.expanduser("~"), "Desktop", "EBUR128_Scanner_Crash_Log.txt")
         try:
-            with open(crash_log_path, "w") as f:
+            with open(crash_log_path, "w", encoding="utf-8") as f:
                 f.write("A critical error occurred:\n\n")
                 traceback.print_exc(file=f)
-        except:
+        except Exception:
             pass
         # Ensure process exits
         sys.exit(1)

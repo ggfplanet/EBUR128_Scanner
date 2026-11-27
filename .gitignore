@@ -19,11 +19,18 @@ README_WORKFLOW.md
 # OS-specific
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs, temp & backups
+*.log
+*.tmp
+*.bak
 
 # IDE, Editor & Agent metadata
 .vscode/
 .idea/
 .kilo/
+.pytest_cache/
 *.swp
 *.swo
 

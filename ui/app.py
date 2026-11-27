@@ -1,26 +1,33 @@
 import sys
 import threading
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                               QLabel, QPushButton, QProgressBar, QTextEdit, QFileDialog, QMessageBox,
-                               QDialog, QCheckBox, QScrollArea, QComboBox, QSpacerItem, QSizePolicy)
-from PySide6.QtCore import Qt, Signal, QObject, QSize
-from PySide6.QtGui import QPalette, QColor, QFont, QIcon, QFontDatabase
 import os
-import subprocess
+import importlib.util
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QProgressBar, QTextEdit, QFileDialog, QMessageBox,
+    QSizePolicy,
+)
+from PySide6.QtCore import Qt, Signal, QObject, QSize, QTimer
 
 from core.scanner import get_audio_streams, get_standard_selection, extract_duration, format_short_time
-from core.analyzer import analyze_loudness, format_timecode
+from core.analyzer import analyze_loudness
+from core.report_formatter import (
+    build_clipboard_report, format_peak_event_line, format_stream_summary, suggest_pdf_filename
+)
 
-import importlib.util
 MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
 
 from ui.i18n import tr, VERSION, init_language
 from ui.dialogs import StreamSelectionDialog, SettingsDialog, InfoDialog
+from ui.pdf_report import generate_pdf_report
+from ui.plot_helper import draw_dark_loudness_plot, setup_dark_plot_axes
 from ui.update_banner import UpdateBanner
 from ui.icon_helper import get_rune_icon
 from ui.resources import (
-    get_resource_path, format_user_error, init_fonts, setup_app_theme,
-    SELECT_BTN_STYLE, SELECT_BTN_DRAG_STYLE, PROGRESS_BAR_STYLE
+    format_user_error, init_fonts, setup_app_theme,
+    SELECT_BTN_STYLE, SELECT_BTN_DRAG_STYLE, PROGRESS_BAR_STYLE,
+    CANCEL_BTN_STYLE, DEV_INFO_BTN_STYLE,
+    REPORT_BTN_PRIMARY_STYLE, REPORT_BTN_SECONDARY_STYLE, REPORT_BTN_SUCCESS_STYLE,
 )
 from core.update_service import check_for_updates
 
@@ -37,8 +44,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         init_fonts()
         init_language()
-        self.resize(600, 750)
-        self.setMinimumSize(560, 680)
+        self.resize(600, 790)
+        self.setMinimumSize(560, 710)
         self.setAcceptDrops(True)
         if not QApplication.windowIcon().isNull():
             self.setWindowIcon(QApplication.windowIcon())
@@ -119,22 +126,7 @@ class MainWindow(QMainWindow):
 
         self.cancel_btn = QPushButton(tr("cancel"))
         self.cancel_btn.setMinimumHeight(32)
-        self.cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3A3A3C;
-                color: #F2F2F7;
-                font-size: 13px;
-                font-weight: bold;
-                border: 1px solid #48484A;
-                border-radius: 4px;
-                padding: 4px 14px;
-            }
-            QPushButton:hover {
-                background-color: #48484A;
-                border-color: #FF453A;
-                color: #F2F2F7;
-            }
-        """)
+        self.cancel_btn.setStyleSheet(CANCEL_BTN_STYLE)
         self.cancel_btn.clicked.connect(self.cancel_analysis)
         self.cancel_btn.hide()
         self.action_layout.addWidget(self.cancel_btn, alignment=Qt.AlignCenter)
@@ -196,7 +188,28 @@ class MainWindow(QMainWindow):
             self.ax = self.figure.subplots()
             self._setup_plot_style()
             self.adv_layout.addWidget(self.canvas)
-        
+
+        # Export Actions direkt unterhalb des Graphen
+        self.export_actions_layout = QHBoxLayout()
+        self.export_actions_layout.setContentsMargins(0, 6, 0, 0)
+        self.export_actions_layout.setSpacing(10)
+
+        self.export_pdf_btn = QPushButton()
+        self.export_pdf_btn.setMinimumHeight(36)
+        self.export_pdf_btn.setIconSize(QSize(16, 16))
+        self.export_pdf_btn.setCursor(Qt.PointingHandCursor)
+        self.export_pdf_btn.clicked.connect(self.export_pdf_report)
+
+        self.copy_values_btn = QPushButton()
+        self.copy_values_btn.setMinimumHeight(36)
+        self.copy_values_btn.setIconSize(QSize(16, 16))
+        self.copy_values_btn.setCursor(Qt.PointingHandCursor)
+        self.copy_values_btn.clicked.connect(self.copy_values_to_clipboard)
+
+        self.export_actions_layout.addWidget(self.export_pdf_btn, stretch=1)
+        self.export_actions_layout.addWidget(self.copy_values_btn, stretch=1)
+        self.adv_layout.addLayout(self.export_actions_layout)
+
         self.result_layout.addWidget(self.adv_widget)
         
         self.main_layout.addWidget(self.result_widget)
@@ -210,21 +223,7 @@ class MainWindow(QMainWindow):
         self.dev_info_btn.setIcon(get_rune_icon("info", normal_color="#AEAEB2", active_color="#F2F2F7", size=14))
         self.dev_info_btn.setIconSize(QSize(14, 14))
         self.dev_info_btn.setCursor(Qt.PointingHandCursor)
-        self.dev_info_btn.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                border: 1px solid #48484A;
-                border-radius: 6px;
-                padding: 4px 10px;
-                color: #AEAEB2;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background-color: #3A3A3C;
-                border-color: #00FF8B;
-                color: #F2F2F7;
-            }
-        """)
+        self.dev_info_btn.setStyleSheet(DEV_INFO_BTN_STYLE)
         self.dev_info_btn.clicked.connect(self.show_info)
         bottom_layout.addWidget(self.dev_info_btn)
         bottom_layout.addStretch()
@@ -234,6 +233,17 @@ class MainWindow(QMainWindow):
         self.current_file = None
         self.current_result = None
         self.total_duration = None
+        self.analyzed_streams = []
+        self.selected_stream_indices = []
+        self._closing = False
+
+        self._copy_feedback_timer = QTimer(self)
+        self._copy_feedback_timer.setSingleShot(True)
+        self._copy_feedback_timer.timeout.connect(self._reset_copy_btn_state)
+
+        self._pdf_feedback_timer = QTimer(self)
+        self._pdf_feedback_timer.setSingleShot(True)
+        self._pdf_feedback_timer.timeout.connect(self._reset_pdf_btn_state)
 
         self.update_texts()
         self._start_update_check()
@@ -241,28 +251,19 @@ class MainWindow(QMainWindow):
     def _start_update_check(self):
         def _check():
             res = check_for_updates(VERSION)
-            self.signals.update_checked.emit(res)
+            if not self._closing:
+                self.signals.update_checked.emit(res)
         threading.Thread(target=_check, daemon=True).start()
 
     def on_update_checked(self, result):
+        if self._closing:
+            return
         if result and result.get("has_update"):
             self.update_banner.set_update_info(result)
 
     def _setup_plot_style(self):
-        if not MATPLOTLIB_AVAILABLE: return
-        self.ax.set_facecolor('#282828')
-        self.ax.tick_params(colors='#AEAEB2', labelsize=8)
-        for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
-            label.set_fontfamily('JetBrains Mono')
-        self.ax.spines['bottom'].set_color('#48484A')
-        self.ax.spines['top'].set_color('#48484A')
-        self.ax.spines['left'].set_color('#48484A')
-        self.ax.spines['right'].set_color('#48484A')
-        self.ax.set_xlabel(tr("plot_time"), color='#AEAEB2', fontsize=9, fontfamily='Plus Jakarta Sans')
-        self.ax.set_ylabel(tr("plot_lufs"), color='#AEAEB2', fontsize=9, fontfamily='Plus Jakarta Sans')
-        self.ax.set_ylim(-60, 3)
-        self.ax.grid(True, alpha=0.2, color='#AEAEB2')
-        self.figure.tight_layout()
+        if MATPLOTLIB_AVAILABLE:
+            setup_dark_plot_axes(self.ax, self.figure)
 
     def update_texts(self):
         self.setWindowTitle(tr("app_title"))
@@ -273,6 +274,8 @@ class MainWindow(QMainWindow):
         self.settings_btn.setToolTip(tr("settings_title"))
         self.dev_info_btn.setText(f" {tr('dev_info_btn')}")
         self.dev_info_btn.setToolTip(tr("info_title"))
+        self._reset_pdf_btn_state()
+        self._reset_copy_btn_state()
 
         if hasattr(self, 'update_banner'):
             self.update_banner.update_texts()
@@ -347,6 +350,8 @@ class MainWindow(QMainWindow):
 
     def start_analysis_flow(self):
         self.total_duration = None
+        self.analyzed_streams = []
+        self.selected_stream_indices = []
         self.progress_bar.setRange(0, 0)
         self.set_loading(True, tr("reading_structure"))
         threading.Thread(target=self._probe_thread, daemon=True).start()
@@ -367,6 +372,7 @@ class MainWindow(QMainWindow):
             self.on_error(tr("no_audio"))
             return
 
+        self.analyzed_streams = list(streams)
         self.total_duration = extract_duration(streams)
         standard_sel = get_standard_selection(streams)
         if standard_sel is not None:
@@ -382,6 +388,7 @@ class MainWindow(QMainWindow):
     def _start_ffmpeg_analysis(self, stream_indices):
         self.cancel_event.clear()
         self.active_process = None
+        self.selected_stream_indices = list(stream_indices)
         if self.total_duration and self.total_duration > 0:
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(0)
@@ -453,6 +460,9 @@ class MainWindow(QMainWindow):
         self._display_result(result)
 
     def closeEvent(self, event):
+        self._closing = True
+        self._copy_feedback_timer.stop()
+        self._pdf_feedback_timer.stop()
         self.cancel_analysis()
         event.accept()
 
@@ -481,22 +491,11 @@ class MainWindow(QMainWindow):
             else:
                 self.alert_label.setText(tr("warning_peak_multi", len(events)))
             
-            lines = []
-            for ev in events:
-                start_tc = format_timecode(ev["start"])
-                sign_p = "+" if ev["max_peak"] >= 0 else ""
-                peak_str = f"{sign_p}{ev['max_peak']:.1f} dBTP"
-                dur = ev.get("duration", 0.0)
-                if dur >= 0.3:
-                    end_tc = format_timecode(ev["end"])
-                    lines.append(tr("peak_event_range", start_tc, end_tc, dur, peak_str))
-                else:
-                    lines.append(tr("peak_event_point", start_tc, peak_str))
-            
+            lines = [format_peak_event_line(ev) for ev in events]
             self.timecodes_textbox.show()
             self.timecodes_textbox.setText("\n".join(lines))
-            if self.height() < 750:
-                self.resize(self.width(), 750)
+            if self.height() < 790:
+                self.resize(self.width(), 790)
         else:
             self.alert_label.hide()
             self.timecodes_textbox.hide()
@@ -518,41 +517,60 @@ class MainWindow(QMainWindow):
 
         # Update Plot
         if MATPLOTLIB_AVAILABLE:
-            self.ax.clear()
-            self._setup_plot_style()
-            
-            times = result.get("Time_Points", [])
-            loudness = result.get("Loudness_Values", [])
-            peaks = result.get("Peak_Exceedances", [])
-            
-            if times and loudness:
-                self.ax.plot(times, loudness, color='#2a82da', linewidth=1.5, label=tr("legend_s"))
-                
-                if peaks:
-                    px = [p[0] for p in peaks]
-                    py = [p[1] for p in peaks]
-                    self.ax.scatter(px, py, color='#ff5555', s=20, zorder=5, label=tr("legend_peak"))
-                
-                # Target Line
-                self.ax.axhline(y=-23, color='#44aa44', linestyle='--', alpha=0.6, label=tr("legend_target"))
-                
-                # EBU +18 scale: -60 LUFS to +3 LUFS headroom
-                self.ax.set_ylim(-60, 3)
-                
-                for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
-                    label.set_fontfamily('JetBrains Mono')
-                
-                self.ax.legend(
-                    loc="lower right", 
-                    fontsize=8, 
-                    facecolor="#282828", 
-                    edgecolor="#48484A", 
-                    labelcolor="#F2F2F7",
-                    prop={'family': 'Plus Jakarta Sans', 'size': 8}
-                )
-                
-                self.figure.tight_layout()
-                self.canvas.draw()
+            draw_dark_loudness_plot(self.ax, self.figure, self.canvas, result)
+
+    def _reset_pdf_btn_state(self):
+        self._pdf_feedback_timer.stop()
+        self.export_pdf_btn.setText(f" {tr('export_pdf_btn')}")
+        self.export_pdf_btn.setToolTip(tr("export_pdf_btn"))
+        self.export_pdf_btn.setIcon(get_rune_icon("file-text", normal_color="#00FF8B", active_color="#33FFAA", size=16))
+        self.export_pdf_btn.setStyleSheet(REPORT_BTN_PRIMARY_STYLE)
+
+    def _reset_copy_btn_state(self):
+        self._copy_feedback_timer.stop()
+        self.copy_values_btn.setText(f" {tr('copy_values_btn')}")
+        self.copy_values_btn.setToolTip(tr("copy_values_btn"))
+        self.copy_values_btn.setIcon(get_rune_icon("copy", normal_color="#F2F2F7", active_color="#00FF8B", size=16))
+        self.copy_values_btn.setStyleSheet(REPORT_BTN_SECONDARY_STYLE)
+
+    def _report_context(self) -> tuple[float | None, str | None]:
+        dur = self.total_duration or extract_duration(self.analyzed_streams)
+        summary = format_stream_summary(self.analyzed_streams, self.selected_stream_indices)
+        return dur, summary
+
+    def copy_values_to_clipboard(self):
+        if not self.current_result:
+            return
+        dur, summary = self._report_context()
+        text = build_clipboard_report(self.current_result, self.current_file, duration_sec=dur, stream_summary=summary)
+        QApplication.clipboard().setText(text)
+        self.copy_values_btn.setText(f" {tr('copied_feedback')}")
+        self.copy_values_btn.setIcon(get_rune_icon("check", normal_color="#30D158", active_color="#30D158", size=16))
+        self.copy_values_btn.setStyleSheet(REPORT_BTN_SUCCESS_STYLE)
+        self._copy_feedback_timer.start(2000)
+
+    def export_pdf_report(self):
+        if not self.current_result:
+            return
+        suggested = suggest_pdf_filename(self.current_file)
+        output_path, _ = QFileDialog.getSaveFileName(self, tr("pdf_save_dialog"), suggested, tr("pdf_file_filter"))
+        if not output_path:
+            return
+        if not output_path.lower().endswith(".pdf"):
+            output_path += ".pdf"
+
+        dur, summary = self._report_context()
+        try:
+            generate_pdf_report(output_path, self.current_result, self.current_file, duration_sec=dur, stream_summary=summary)
+        except Exception as e:
+            QMessageBox.critical(self, tr("error"), tr("pdf_save_error", str(e)))
+            return
+
+        self.status_label.setText(tr("pdf_saved_status", os.path.basename(output_path)))
+        self.export_pdf_btn.setText(f" {tr('pdf_saved_feedback')}")
+        self.export_pdf_btn.setIcon(get_rune_icon("check", normal_color="#30D158", active_color="#30D158", size=16))
+        self.export_pdf_btn.setStyleSheet(REPORT_BTN_SUCCESS_STYLE)
+        self._pdf_feedback_timer.start(2500)
 
 def run_app():
     if sys.platform == "win32":
